@@ -1,0 +1,1853 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="しゅわっと喫茶"><meta name="theme-color" content="#11291B"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-512.png"><link rel="manifest" href="manifest.webmanifest"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}html{background:#11291B}</style><script>window.SHUWATTO_HOME=true</script></head><body><title>しゅわっと果実喫茶</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Kaisei+Decol:wght@500;700&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+<style>
+/* Layout: one phone-shaped stage. The 3D café counter fills it; HUD floats in a band at the top (sales + order slip) and a band at the bottom (two bottles, ice, serve). Single deliberate look: deep bottle-green café at night. */
+:root{
+  --green-950:#11291B; --green-900:#173826; --green-800:#1F4A31; --green-700:#2A5C3D;
+  --peach:#F4A7A2; --peach-deep:#DC5F6B; --peach-soft:#FCE1DA;
+  --pear:#BFD674; --pear-deep:#6F9A2E; --pear-soft:#EAF2C8;
+  --ribbon:#CF3B35; --ribbon-deep:#A12A25;
+  --cream:#FBF5E8; --paper:#FFFDF6; --paper-line:#E8DFCB; --ink:#1B3324; --ink-soft:#56695B; --gold:#D9B24C; --ice:#DDF2FB;
+  --f-display:"Kaisei Decol","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-latin:"DM Serif Display","Didot","Times New Roman",serif;
+  --f-body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Meiryo",sans-serif;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--green-950);color:var(--cream);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent;
+  background-image:radial-gradient(circle at 12% 22%,rgba(244,167,162,.10) 0 70px,transparent 71px),radial-gradient(circle at 88% 70%,rgba(191,214,116,.09) 0 90px,transparent 91px),radial-gradient(circle at 80% 15%,rgba(251,245,232,.06) 0 40px,transparent 41px)}
+#root{height:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.stage{position:relative;height:100%;max-width:480px;margin:0 auto;overflow:hidden;background:var(--green-800);box-shadow:0 0 0 1px rgba(0,0,0,.25),0 30px 80px rgba(0,0,0,.5);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+.gl{position:absolute;inset:0;display:block;width:100%;height:100%}
+.anchors{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.anchor{position:absolute;left:0;top:0;will-change:transform}
+
+/* ---------- top HUD ---------- */
+.hud-top{position:absolute;left:0;right:0;top:0;padding:10px max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:8px;pointer-events:none;z-index:5}
+.hud-row{display:flex;align-items:stretch;gap:8px}
+.day-pill{font-family:var(--f-display);font-weight:700;background:var(--cream);color:var(--ink);border-radius:999px;padding:3px 12px;font-size:14px;border:2px solid var(--ink);box-shadow:0 2px 0 var(--ink);white-space:nowrap;align-self:center}
+.clock{flex:1;height:22px;border-radius:999px;background:rgba(17,41,27,.75);border:2px solid var(--cream);position:relative;overflow:hidden;align-self:center}
+.clock>i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--pear),var(--peach));transition:width .1s linear}
+.clock>span{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:900;color:var(--ink);letter-spacing:.04em;font-variant-numeric:tabular-nums;text-shadow:0 0 4px rgba(255,255,255,.7)}
+.clock.late>i{background:linear-gradient(90deg,var(--ribbon),var(--peach))}
+.clock.over>span{color:var(--cream);text-shadow:none}
+.icon-btn{pointer-events:auto;width:36px;height:36px;flex:none;border-radius:50%;border:2px solid var(--cream);background:rgba(17,41,27,.75);display:grid;place-items:center;padding:0;align-self:center}
+.icon-btn svg{width:17px;height:17px}
+.sales{flex:none;width:104px;background:var(--ink);border:2px solid var(--gold);border-radius:12px;padding:6px 9px 7px;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;gap:2px;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.sales small{font-size:10px;color:var(--gold);letter-spacing:.08em;font-weight:700}
+.sales b{font-family:var(--f-latin);font-size:22px;line-height:1;color:var(--cream);font-weight:400}
+.goalbar{height:5px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:3px}
+.goalbar>i{display:block;height:100%;background:var(--gold);transition:width .3s}
+.goalbar.done>i{background:var(--pear)}
+.order{flex:1;min-width:0;display:flex;gap:10px;align-items:center;background:var(--paper);color:var(--ink);border-radius:12px;padding:7px 10px;border:2px solid var(--ink);box-shadow:0 3px 0 var(--ink);animation:slipIn .4s cubic-bezier(.3,1.5,.5,1)}
+.order.gold{background:linear-gradient(135deg,#FFF7DA,#F7E2A2);border-color:#7A5A12;box-shadow:0 3px 0 #7A5A12}
+.order .mini{flex:none;width:38px;height:56px}
+.order .txt{flex:1;min-width:0}
+.order .who{font-size:10px;color:var(--ink-soft);font-weight:700;display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.order .who .star{color:#B07D0E}
+.order .req{font-family:var(--f-display);font-size:16px;font-weight:700;line-height:1.25;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.order .gname{font-size:10px;color:var(--ink-soft);display:flex;gap:6px;align-items:center}
+.icechip{display:inline-flex;align-items:center;gap:2px;background:var(--ice);border:1.5px solid #6BA9C4;color:#1E5B76;border-radius:6px;padding:0 5px;font-size:10px;font-weight:900;line-height:1.5}
+.icechip svg{width:10px;height:10px}
+.patience{height:6px;border-radius:999px;background:var(--paper-line);overflow:hidden;margin-top:5px}
+.patience>i{display:block;height:100%;background:var(--pear-deep);transition:width .1s linear}
+.patience.low>i{background:var(--ribbon)}
+.tip{font-size:11px;color:var(--ribbon-deep);font-weight:900;margin-top:4px;line-height:1.3}
+@keyframes slipIn{from{transform:translateY(-14px) rotate(-2deg);opacity:0}to{transform:none;opacity:1}}
+.mixm{background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:12px;padding:6px 10px 7px;box-shadow:0 3px 0 var(--ink);font-size:11px;font-weight:900;display:grid;grid-template-columns:auto 1fr auto;gap:4px 8px;align-items:center;animation:slipIn .4s cubic-bezier(.3,1.5,.5,1)}
+.mixm .bar{position:relative;height:14px;border-radius:999px;background:linear-gradient(90deg,var(--ca),var(--cb));border:1.5px solid var(--ink)}
+.mixm .zone{position:absolute;top:-4px;bottom:-4px;border:2px dashed var(--ink);border-radius:6px;background:rgba(255,255,255,.35)}
+.mixm .needle{position:absolute;top:-6px;bottom:-6px;width:4px;margin-left:-2px;background:var(--ink);border-radius:2px;transition:left .1s linear}
+.mixm .needle.ok{background:var(--ribbon)}
+.mixm .cap{grid-column:1/-1;text-align:center;font-size:10px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+
+/* ---------- 3D anchored labels ---------- */
+.bubble{position:absolute;left:0;bottom:0;transform:translateX(-50%);transform-origin:50% 100%;max-width:min(300px,80vw);white-space:normal;text-align:center;width:max-content;background:var(--paper);color:var(--ink);font-weight:700;font-size:13px;line-height:1.35;padding:7px 11px;border-radius:14px;border:2px solid var(--ink);box-shadow:0 3px 0 rgba(0,0,0,.25);animation:bub .35s cubic-bezier(.3,1.6,.5,1)}
+.bubble::after{content:"";position:absolute;left:calc(50% - 7px);bottom:-9px;width:12px;height:12px;background:var(--paper);border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(45deg) skew(8deg,8deg)}
+.bubble.gold,.bubble.gold::after{background:#FFF4CF}
+@keyframes bub{from{scale:.3;opacity:0}to{scale:1;opacity:1}}
+.anchor[data-side="right"] .bubble{bottom:auto;top:0;transform:translateY(-50%);transform-origin:0 50%;text-align:left}
+.anchor[data-side="right"] .bubble::after{left:-8px;bottom:auto;top:calc(50% - 6px);border-right:0;border-bottom:2px solid var(--ink);border-left:2px solid var(--ink);transform:rotate(45deg)}
+.anchor[data-side="left"] .bubble{left:auto;right:0;bottom:auto;top:0;transform:translateY(-50%);transform-origin:100% 50%;text-align:left}
+.anchor[data-side="left"] .bubble::after{left:auto;right:-8px;bottom:auto;top:calc(50% - 6px);border-bottom:0;border-top:2px solid var(--ink);border-right:2px solid var(--ink);transform:rotate(45deg)}
+.tlabel{position:absolute;left:0;top:0;transform:translate(0,-50%);display:flex;align-items:center;gap:3px;font-size:11px;font-weight:900;color:var(--paper);background:var(--c);padding:1px 7px 1px 5px;border-radius:999px;border:1.5px solid var(--ink);white-space:nowrap}
+.tlabel::before{content:"";width:0;height:0;border:5px solid transparent;border-right:6px solid var(--ink);margin-left:-17px;margin-right:4px}
+.judge{position:absolute;left:0;top:0;transform:translate(-50%,-50%);text-align:center;white-space:nowrap;animation:pop .55s cubic-bezier(.3,1.6,.5,1) both}
+.judge .g{font-family:var(--f-display);font-weight:700;font-size:40px;line-height:1.05;color:var(--gc,var(--cream));
+  text-shadow:3px 0 0 var(--ink),-3px 0 0 var(--ink),0 3px 0 var(--ink),0 -3px 0 var(--ink),2px 2px 0 var(--ink),-2px 2px 0 var(--ink),2px -2px 0 var(--ink),-2px -2px 0 var(--ink),0 6px 0 var(--ink)}
+.judge .yen{display:inline-block;margin-top:6px;font-family:var(--f-latin);font-size:22px;color:var(--ink);background:var(--gold);border:2px solid var(--ink);border-radius:999px;padding:0 12px;animation:rise 1.4s ease-out both .15s}
+.judge .yen.zero{background:var(--paper-line)}
+.judge .hint{display:block;margin-top:6px;font-size:12px;font-weight:900;color:var(--ink);background:var(--paper);border-radius:8px;padding:2px 8px;width:max-content;margin-inline:auto}
+.combo{display:block;width:max-content;margin:6px auto 0;background:var(--ribbon);color:var(--cream);font-family:var(--f-display);font-weight:700;font-size:15px;padding:3px 22px;clip-path:polygon(0 0,100% 0,93% 50%,100% 100%,0 100%,7% 50%);animation:popc .5s cubic-bezier(.3,1.6,.5,1) both .1s}
+@keyframes pop{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+@keyframes popc{0%{transform:scale(.3);opacity:0}100%{transform:none;opacity:1}}
+@keyframes rise{0%{transform:translateY(8px);opacity:0}25%{transform:none;opacity:1}100%{transform:translateY(-6px);opacity:1}}
+
+/* ---------- bottom controls ---------- */
+.hud-bottom{position:absolute;left:0;right:0;bottom:0;padding:0 max(14px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end;z-index:5}
+.pour{pointer-events:auto;touch-action:none;height:92px;border-radius:24px;border:3px solid var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-family:var(--f-display);font-weight:700;font-size:20px;color:var(--ink);box-shadow:0 6px 0 var(--ink);transition:transform .06s,box-shadow .06s;position:relative;padding:0;background:radial-gradient(circle at 30% 22%,var(--b0),var(--b1) 78%)}
+.pour svg{width:34px;height:34px;pointer-events:none}
+.pour.active{transform:translateY(5px);box-shadow:0 1px 0 var(--ink)}
+.pour small{font-family:var(--f-body);font-size:10px;font-weight:900;opacity:.65;letter-spacing:.05em}
+.pour.hint::after{content:"";position:absolute;inset:-8px;border-radius:30px;border:3px solid var(--cream);animation:pulse 1.1s ease-in-out infinite;pointer-events:none}
+@keyframes pulse{0%,100%{opacity:.15;transform:scale(.97)}50%{opacity:1;transform:scale(1.02)}}
+.center-col{display:flex;flex-direction:column;align-items:center;gap:8px}
+.hud-bottom.multi{grid-template-columns:minmax(0,1fr);gap:10px}
+.action-row{display:flex;justify-content:center;align-items:center;gap:12px}
+.hud-bottom.multi .serve{margin-bottom:0;height:54px}
+.pour-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:7px}
+.pour-row .pour{height:72px;font-size:16px;border-radius:18px;box-shadow:0 5px 0 var(--ink)}
+.pour-row .pour.active{box-shadow:0 1px 0 var(--ink)}
+.pour-row .pour svg{width:26px;height:26px}
+.pour-row .pour small{display:none}
+.pour-row .pour.hint::after{inset:-6px;border-radius:22px}
+.serve{pointer-events:auto;height:62px;min-width:112px;padding:0 26px;border:0;background:var(--ribbon);color:var(--cream);font-family:var(--f-display);font-weight:700;font-size:21px;clip-path:polygon(0 0,100% 0,90% 50%,100% 100%,0 100%,10% 50%);filter:drop-shadow(0 5px 0 var(--ribbon-deep));transition:transform .08s,opacity .2s;margin-bottom:14px}
+.serve:disabled{opacity:.4;cursor:default}
+.serve.ready{animation:wiggle 1.2s ease-in-out infinite}
+.serve:active:not(:disabled){transform:translateY(4px)}
+@keyframes wiggle{0%,100%{transform:none}50%{transform:scale(1.07)}}
+.icebtn{pointer-events:auto;display:flex;align-items:center;gap:6px;height:40px;padding:0 14px 0 8px;border-radius:999px;border:2.5px solid var(--ink);background:linear-gradient(180deg,#F4FBFF,var(--ice));color:#1E5B76;font-weight:900;font-size:13px;box-shadow:0 4px 0 var(--ink)}
+.icebtn svg{width:22px;height:22px}
+.icebtn:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.icebtn:disabled{opacity:.45;cursor:default}
+.icebtn.hint{animation:wiggle 1.1s ease-in-out infinite}
+
+/* ---------- overlays ---------- */
+.banner{position:absolute;left:0;right:0;top:40%;display:grid;place-items:center;pointer-events:none;z-index:8}
+.banner span{font-family:var(--f-display);font-weight:700;font-size:28px;background:var(--cream);color:var(--ribbon);border:3px solid var(--ink);padding:6px 26px;border-radius:14px;box-shadow:0 5px 0 var(--ink);animation:popc .45s cubic-bezier(.3,1.6,.5,1)}
+.legend{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;overflow:hidden;z-index:9;animation:fadeio 2.6s ease both}
+.legend .flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(255,250,230,.75),rgba(255,240,200,0) 65%)}
+.legend .rays{position:absolute;left:50%;top:45%;width:180vmax;height:180vmax;margin:-90vmax 0 0 -90vmax;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,0) 0 7deg,rgba(255,236,190,.38) 7deg 14deg);-webkit-mask:radial-gradient(circle,#000 8%,transparent 42%);mask:radial-gradient(circle,#000 8%,transparent 42%);animation:spin 9s linear infinite}
+.legend .box{position:relative;text-align:center;transform:translateY(-30px)}
+.legend .word{font-family:var(--f-latin);font-size:min(15vw,62px);line-height:1;background:linear-gradient(90deg,#FF6F91,#FFB15C,#FFE86B,#8EDB7F,#62C6F2,#B597FF,#FF6F91);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 var(--ink)) drop-shadow(2px 0 0 var(--ink)) drop-shadow(-2px 0 0 var(--ink));animation:slide 1.6s linear infinite,popc .6s cubic-bezier(.3,1.6,.5,1) both}
+.legend .sub{display:inline-block;margin-top:10px;font-family:var(--f-display);font-weight:700;font-size:16px;color:var(--ink);background:var(--paper);border:2px solid var(--ink);padding:3px 14px;border-radius:999px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes slide{to{background-position:200% 0}}
+@keyframes fadeio{0%{opacity:0}8%{opacity:1}80%{opacity:1}100%{opacity:0}}
+
+.sheet{position:absolute;inset:0;display:grid;place-items:center;background:rgba(12,30,19,.62);padding:20px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px));z-index:20;overflow-y:auto}
+.card{width:min(340px,100%);background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:20px;padding:22px 20px 18px;box-shadow:0 7px 0 var(--ink);text-align:center;animation:popc .4s cubic-bezier(.3,1.5,.5,1)}
+.card h2{font-family:var(--f-display);font-size:24px;margin:4px 0 10px;text-wrap:balance}
+.card ul,.card ol{text-align:left;margin:0 0 14px;padding-left:1.2em;font-size:14px;line-height:1.65}
+.card li+li{margin-top:4px}
+.intro-day{font-family:var(--f-display);font-weight:700;color:var(--ribbon);font-size:15px;letter-spacing:.1em}
+.intro-day b{font-family:var(--f-latin);font-weight:400;font-size:48px;line-height:1;margin-right:2px;color:var(--green-800)}
+.rules{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 12px}
+.rules span{font-size:11px;font-weight:900;border:1.5px solid var(--ink);border-radius:999px;padding:2px 9px;background:var(--cream)}
+.goal{background:var(--pear-soft);border-radius:12px;padding:8px 10px;font-size:13px;font-weight:700;margin-bottom:14px}
+.goal b{font-family:var(--f-latin);font-weight:400;font-size:20px;margin-left:6px}
+.cta{display:block;width:100%;height:54px;border:0;background:var(--ribbon);color:var(--cream);font-family:var(--f-display);font-weight:700;font-size:20px;clip-path:polygon(0 0,100% 0,95% 50%,100% 100%,0 100%,5% 50%);filter:drop-shadow(0 4px 0 var(--ribbon-deep))}
+.cta:active{transform:translateY(3px)}
+.ghost{flex:1;min-width:0;height:44px;border-radius:999px;border:2px solid var(--cream);background:rgba(17,41,27,.78);color:var(--cream);font-weight:900;font-size:14px}
+.link{margin-top:10px;background:none;border:0;color:var(--ink-soft);font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.card .ghost,.receipt .ghost{border-color:var(--ink);background:transparent;color:var(--ink)}
+
+/* title */
+.title{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;justify-content:space-between;padding:calc(26px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));pointer-events:none}
+.marquee{pointer-events:auto;align-self:center;width:min(300px,84%);background:var(--cream);color:var(--green-800);border:3px solid var(--ink);border-radius:150px 150px 20px 20px;padding:30px 18px 16px;text-align:center;box-shadow:0 6px 0 var(--ink);position:relative;animation:popc .6s cubic-bezier(.3,1.4,.5,1)}
+.marquee::before{content:"";position:absolute;inset:6px;border:1.5px solid var(--peach-deep);border-radius:144px 144px 15px 15px;pointer-events:none}
+.marquee .eyebrow{font-family:var(--f-display);font-size:13px;letter-spacing:.5em;color:var(--ribbon);font-weight:700;padding-left:.5em}
+.marquee h1{font-family:var(--f-display);font-weight:700;font-size:clamp(34px,12vw,50px);white-space:nowrap;margin:2px 0 6px;line-height:1.05;color:var(--green-800);text-shadow:3px 3px 0 var(--peach)}
+.ribbon{display:inline-block;background:var(--ribbon);color:var(--cream);font-family:var(--f-latin);font-style:italic;font-size:19px;letter-spacing:.04em;padding:3px 30px;clip-path:polygon(0 0,100% 0,92% 50%,100% 100%,0 100%,8% 50%)}
+.marquee .sub{font-size:12px;font-weight:700;margin:10px 0 0;color:var(--ink-soft);line-height:1.5}
+.title-bottom{pointer-events:auto;display:flex;flex-direction:column;gap:9px;width:min(340px,100%);align-self:center}
+.title-meta{display:flex;justify-content:center;gap:8px;align-items:center}
+.day-pick{display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:16px;background:var(--green-900);border:2px solid var(--cream);border-radius:999px;padding:4px 6px;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.day-pick span{min-width:58px;text-align:center}
+.day-pick button{width:30px;height:30px;border-radius:50%;border:0;background:var(--cream);color:var(--ink);font-size:18px;font-weight:900;line-height:1;padding:0}
+.day-pick button:disabled{opacity:.3;cursor:default}
+.wallet{font-size:12px;font-weight:900;background:var(--ink);border:2px solid var(--gold);color:var(--cream);border-radius:999px;padding:7px 12px;font-variant-numeric:tabular-nums;white-space:nowrap;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.wallet b{font-family:var(--f-latin);font-weight:400;font-size:15px;margin-left:4px;color:var(--gold)}
+.row2{display:flex;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.best{margin:0;align-self:center;text-align:center;font-size:11px;font-weight:700;color:var(--cream);background:rgba(17,41,27,.78);border-radius:999px;padding:3px 12px;font-variant-numeric:tabular-nums}
+.corner{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));pointer-events:auto;display:flex;gap:8px}
+
+/* receipt */
+.receipt{width:min(320px,100%);background:var(--paper);color:var(--ink);padding:20px 20px 22px;position:relative;font-variant-numeric:tabular-nums;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:printIn .55s cubic-bezier(.2,1.2,.4,1);
+  -webkit-mask:radial-gradient(circle at 8px 100%,transparent 6px,#000 6.5px) 0 100%/16px 10px repeat-x,linear-gradient(#000,#000) 0 0/100% calc(100% - 9px) no-repeat;
+  mask:radial-gradient(circle at 8px 100%,transparent 6px,#000 6.5px) 0 100%/16px 10px repeat-x,linear-gradient(#000,#000) 0 0/100% calc(100% - 9px) no-repeat}
+@keyframes printIn{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.r-head{display:flex;justify-content:space-between;font-size:12px;font-weight:900;color:var(--ribbon);border-bottom:2px solid var(--ribbon);padding-bottom:6px;letter-spacing:.08em}
+.r-shop{font-family:var(--f-display);font-weight:700;font-size:18px;text-align:center;margin:12px 0 8px}
+.receipt dl{margin:0;border-top:1.5px dashed var(--paper-line);border-bottom:1.5px dashed var(--paper-line);padding:8px 0}
+.receipt dl>div{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+.receipt dt{color:var(--ink-soft);font-weight:700}
+.receipt dd{margin:0;font-weight:900}
+.r-total{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px}
+.r-total span{font-weight:900;font-size:14px}
+.r-total b{font-family:var(--f-latin);font-weight:400;font-size:32px}
+.r-goal{text-align:right;font-size:12px;color:var(--ink-soft);font-weight:700}
+.r-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 2px}
+.stars{font-size:30px;letter-spacing:4px;color:var(--paper-line);line-height:1}
+.stars .on{color:var(--gold);text-shadow:0 2px 0 #9E7B1E}
+.stamp{flex:none;transform:rotate(-12deg);border:3px solid var(--ribbon);color:var(--ribbon);border-radius:50%;width:76px;height:76px;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:14px;line-height:1.2;text-align:center;opacity:.85;animation:stamp .4s cubic-bezier(.3,1.6,.5,1) .35s both;padding:6px}
+.stamp.ng{border-color:var(--ink-soft);color:var(--ink-soft);font-size:12px}
+@keyframes stamp{from{transform:rotate(-12deg) scale(2.2);opacity:0}to{transform:rotate(-12deg) scale(1);opacity:.85}}
+.r-note{font-size:12px;font-weight:700;background:var(--pear-soft);border-radius:10px;padding:7px 10px;margin-top:8px;text-align:center;line-height:1.5}
+.r-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+
+/* book, shop, ranking, settings */
+.wide{width:min(360px,100%);max-height:100%;overflow-y:auto;text-align:left}
+.wide h2{text-align:center}
+.wide h3{font-family:var(--f-display);font-size:16px;margin:14px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+.wide h3 small{font-family:var(--f-body);font-size:11px;color:var(--ink-soft)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--cream);border:2px solid var(--paper-line);border-radius:12px;padding:8px 4px 6px;text-align:center;font-size:11px;font-weight:700;line-height:1.3;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tile svg{width:46px;height:46px}
+.tile.lock{color:var(--ink-soft);opacity:.7}
+.tile .d{font-size:9px;color:var(--ink-soft);font-weight:500}
+.legendline{margin-top:12px;font-size:12px;font-weight:700;background:linear-gradient(90deg,#FFE3EA,#FFF3C9,#E5F6DE);border-radius:10px;padding:8px 10px}
+.shopwallet{display:flex;justify-content:space-between;align-items:baseline;background:var(--ink);color:var(--cream);border-radius:12px;padding:8px 12px;font-weight:900;font-size:13px}
+.shopwallet b{font-family:var(--f-latin);font-weight:400;font-size:24px;color:var(--gold)}
+.item{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1.5px dashed var(--paper-line)}
+.item svg{width:44px;height:44px}
+.item .nm{font-weight:900;font-size:14px}
+.item .pk{font-size:11px;color:var(--ink-soft);font-weight:700;line-height:1.35}
+.buy{min-width:84px;height:36px;border-radius:999px;border:2px solid var(--ink);background:var(--gold);color:var(--ink);font-weight:900;font-size:12px;font-variant-numeric:tabular-nums;padding:0 10px}
+.buy-confirm{z-index:25}
+.buy-confirm .card svg{display:block;width:64px;height:64px;margin:0 auto 2px}
+.buy-confirm .nm{font-family:var(--f-display);font-weight:700;font-size:18px;margin:2px 0 2px}
+.buy-confirm .pk{font-size:12px;color:var(--ink-soft);font-weight:700;line-height:1.45;margin:0 0 10px}
+.buy-confirm dl{margin:0 0 14px;border-top:1.5px dashed var(--paper-line);border-bottom:1.5px dashed var(--paper-line);padding:6px 0;font-variant-numeric:tabular-nums}
+.buy-confirm dl>div{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;font-size:13px}
+.buy-confirm dt{color:var(--ink-soft);font-weight:700}
+.buy-confirm dd{margin:0;font-weight:900}
+.buy-confirm dd.price{font-family:var(--f-latin);font-weight:400;font-size:22px}
+.buy:disabled{background:var(--paper-line);color:var(--ink-soft);border-color:var(--paper-line);cursor:default}
+.buy.owned{background:transparent;border-color:var(--pear-deep);color:var(--pear-deep)}
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rank li{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;background:var(--cream);border-radius:10px;padding:7px 10px;font-variant-numeric:tabular-nums}
+.rank li.me{background:var(--peach-soft);outline:2px solid var(--peach-deep)}
+.rank .no{font-family:var(--f-latin);font-size:18px;text-align:center}
+.rank .no.top{color:#B07D0E}
+.rank .nm{font-weight:900;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank .sub{display:block;font-size:10px;color:var(--ink-soft);font-weight:700}
+.rank .sc{font-family:var(--f-latin);font-size:18px}
+.note{font-size:12px;color:var(--ink-soft);font-weight:700;line-height:1.55;margin:8px 0 0;text-align:center}
+.nickrow{display:flex;gap:8px;margin:6px 0 4px}
+.nickrow input{flex:1;min-width:0;height:40px;border-radius:10px;border:2px solid var(--ink);padding:0 10px;font:inherit;font-weight:700;font-size:16px;background:#fff;color:var(--ink);user-select:text;-webkit-user-select:text}
+.nickrow button{height:40px;border-radius:10px;border:2px solid var(--ink);background:var(--ribbon);color:var(--cream);font-weight:900;padding:0 14px}
+.transfer{padding-top:4px}
+.transfer textarea{display:block;width:100%;margin-top:8px;border-radius:10px;border:2px solid var(--ink);padding:8px 10px;font:16px/1.4 ui-monospace,Menlo,Consolas,monospace;background:#fff;color:var(--ink);resize:none;word-break:break-all;user-select:text;-webkit-user-select:text}
+.transfer .small{display:block;width:100%;height:40px;margin-top:6px;border-radius:10px;border:2px solid var(--ink);background:var(--ribbon);color:var(--cream);font-weight:900}
+.transfer .small.confirm{background:var(--ink)}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1.5px dashed var(--paper-line)}
+.toggle .t b{display:block;font-size:14px}
+.toggle .t span{font-size:11px;color:var(--ink-soft);font-weight:700;line-height:1.4}
+.sw{flex:none;width:52px;height:30px;border-radius:999px;border:2px solid var(--ink);background:var(--paper-line);position:relative;padding:0}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--ink);transition:left .15s}
+.sw[aria-checked="true"]{background:var(--pear-deep)}
+.sw[aria-checked="true"]::after{left:24px}
+.sw:disabled{opacity:.4;cursor:default}
+
+@media (prefers-reduced-motion: reduce){
+  .legend .rays,.serve.ready,.pour.hint::after,.legend .word,.icebtn.hint{animation:none}
+}
+</style>
+
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const { useState, useEffect, useRef } = React;
+const html = htm.bind(React.createElement);
+const V3 = THREE.Vector3, V2 = THREE.Vector2;
+
+/* =========================================================
+   Data
+   ========================================================= */
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+const easeInOut=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const easeOutBack=t=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)};
+const yen=n=>'¥'+Math.round(n).toLocaleString('ja-JP');
+const r2=x=>Math.round(x*100)/100;
+
+const FRUIT={
+  peach: {name:'白桃', liquid:'#F7B6AE', foam:'#FFF3EE', line:'#DC5F6B', ui:'#DC5F6B', btn:['#FFF0EB','#F4A7A2'], mul:1, foamMul:1},
+  pear:  {name:'洋梨', liquid:'#D3E394', foam:'#F8FBE8', line:'#5E8A22', ui:'#6F9A2E', btn:['#F7FBE2','#BFD674'], mul:1, foamMul:1},
+  mikan: {name:'みかん', liquid:'#FFBE6B', foam:'#FFF5E4', line:'#DD7410', ui:'#C9680C', btn:['#FFF3DE','#FFC27A'], mul:1.15, foamMul:1, price:12000, desc:'甘ずっぱいオレンジ色。一杯の値段が少し上がる'},
+  budou: {name:'ぶどう', liquid:'#BE97E0', foam:'#F7F0FF', line:'#7A4AB0', ui:'#7A4AB0', btn:['#F5EDFF','#CBAAEC'], mul:1.25, foamMul:1, price:25000, desc:'深いむらさき。一杯の値段がさらに上がる'},
+  ramune:{name:'ラムネ', liquid:'#C3E8F6', foam:'#FFFFFF', line:'#2C8FC0', ui:'#2482B3', btn:['#EEF9FF','#A6DCF2'], mul:1.3, foamMul:1.5, price:45000, desc:'泡が1.5倍立つ上級者向け。値段もいちばん高い'},
+};
+const BASE_FRUITS=['peach','pear'], EXTRA_FRUITS=['mikan','budou','ramune'], ALL_FRUITS=[...BASE_FRUITS,...EXTRA_FRUITS];
+/* every fruit keeps one place: buttons left→right, and the side its bottle pours from */
+const COUNTER_ORDER=['peach','mikan','ramune','budou','pear'];
+const BOTTLE_SIDE={peach:-1,mikan:-1,ramune:-1,budou:1,pear:1};
+const counterOf=owned=>COUNTER_ORDER.filter(f=>BASE_FRUITS.includes(f)||owned[f]);
+const DECOR_KEYS=['plant','lamp','record','stained','neon'];
+const DECOR={
+  plant:  {name:'観葉植物', price:8000, perk:'お客さんのがまん +10%'},
+  lamp:   {name:'ペンダントライト', price:15000, perk:'ぴったり・いい感じのチップ +10%'},
+  record: {name:'レコードプレーヤー', price:25000, perk:'BGMが流れる・がまん +10%'},
+  stained:{name:'ステンドグラスの窓', price:40000, perk:'★きらめき客が来やすくなる'},
+  neon:   {name:'喫茶ネオン', price:60000, perk:'すべての売上 +10%'},
+};
+const perksOf=o=>({patience:1+(o.plant?0.1:0)+(o.record?0.1:0), tip:o.lamp?1.1:1, special:o.stained?1.7:1, sales:o.neon?1.1:1});
+
+const GLASS_KEYS=['tumbler','goblet','flute','coupe','mug'];
+const GLASSES={
+  tumbler:{name:'タンブラー', H:1.42, baseY:0.08, wall:0.035, r:y=>0.40+0.075*y, fill:2.6, foamGain:0.5, foamMax:0.11, mul:1.0, day:1, desc:'まっすぐで注ぎやすい'},
+  goblet:{name:'ゴブレット', H:0.98, baseY:0.62, wall:0.03, r:y=>0.12+0.43*(1-Math.pow(1-y,2.2)), fill:2.4, foamGain:0.55, foamMax:0.13, mul:1.1, day:2, stem:{r:0.055,foot:0.36}, desc:'上ほど広くて、後半ゆっくり'},
+  flute:{name:'フルート', H:1.62, baseY:0.5, wall:0.025, r:y=>0.13+0.10*Math.sin(Math.min(1,y*1.15)*Math.PI*0.5), fill:2.1, foamGain:0.85, foamMax:0.2, mul:1.25, day:3, stem:{r:0.045,foot:0.3}, desc:'細長くて泡が立ちやすい'},
+  coupe:{name:'クープ', H:0.48, baseY:0.98, wall:0.025, r:y=>0.14+0.52*Math.sqrt(y), fill:2.3, foamGain:0.75, foamMax:0.17, mul:1.2, day:4, stem:{r:0.045,foot:0.34}, desc:'浅くて泡があふれやすい'},
+  mug:{name:'ジョッキ', H:1.3, baseY:0.1, wall:0.045, r:()=>0.46, fill:3.0, foamGain:0.6, foamMax:0.14, mul:1.15, day:5, handle:true, desc:'大きくてたっぷり入る'},
+};
+for(const k of GLASS_KEYS){ const g=GLASSES[k]; let v=0; const n=200; for(let i=0;i<n;i++){ const y=(i+.5)/n; v+=g.r(y)**2/n; } g.V=v; g.Q=v/g.fill; g.key=k; }
+const ICE_FRAC=0.065, ICE_MAX=4;
+
+const SPECIES_KEYS=['usagi','kuma','neko','hitsuji','kitsune','penguin'];
+const SPECIES={
+  usagi:  {name:'うさぎのモモ', short:'モモ', body:'#F8F3EA', face:'#F8F3EA', accent:'#F6B9B3', ears:'long', outfit:'#CF3B35', like:'白桃のことになると目がない'},
+  kuma:   {name:'くまのナッシュ', short:'ナッシュ', body:'#B47D4B', face:'#B47D4B', accent:'#EBCB9F', ears:'round', outfit:'#2A5C3D', muzzle:true, like:'洋梨を毎朝ひとつ食べる'},
+  neko:   {name:'ねこのミント', short:'ミント', body:'#C9C3BB', face:'#C9C3BB', accent:'#F6B9B3', ears:'tri', outfit:'#D9B24C', like:'泡がはじける音が好き'},
+  hitsuji:{name:'ひつじのメリノ', short:'メリノ', body:'#FFF8EA', face:'#EBD3B2', accent:'#FFFFFF', ears:'side', outfit:'#6F9A2E', wool:true, like:'ゆっくり注いでほしい派'},
+  kitsune:{name:'きつねのコン', short:'コン', body:'#E8893B', face:'#E8893B', accent:'#FFF5E8', ears:'tall', outfit:'#1F4A31', muzzle:true, like:'三層ソーダがお気に入り'},
+  penguin:{name:'ペンギンのペン', short:'ペン', body:'#2D3C58', face:'#2D3C58', accent:'#FFFFFF', ears:'none', outfit:'#CF3B35', beak:true, like:'氷たっぷりが好き'},
+};
+
+const DAY_LEN=75;
+const dayGoal=d=>[0,1800,2700,3400,4100,4700][d] ?? (4700+500*(d-5));
+const DAY_INFO={
+  1:{title:'開店初日', lines:['お客さんの注文どおり、果汁をグラスの線まで注ごう。','ボタンを長押しで注ぐ。指をはなしても少しだけ流れるので、線の少し手前で止めるのがコツ。']},
+  2:{title:'二層ソーダ、はじめました', lines:['2種類の果汁を重ねる「二層」の注文が来るようになったよ。','新しいグラス「ゴブレット」が登場。上にいくほど広がるので、後半はゆっくり増える。']},
+  3:{title:'きらめきの来店', lines:['細長い「フルート」は泡が立ちやすい。一気に注がず、少し待って泡を落ち着かせよう。','★のついたお客さんの「きらめきオーダー」をぴったりで出すと…？']},
+  4:{title:'三層ソーダ', lines:['三層の注文が登場。','浅い「クープ」は泡があふれやすいので要注意。']},
+  5:{title:'ジョッキの日', lines:['大きな「ジョッキ」が登場。たっぷり注ごう。','お客さんがだんだんせっかちに。手早くいこう。']},
+  6:{title:'満員御礼', lines:['ここからは毎日お客さんがせっかちになり、目標売上も上がっていくよ。','お店の改装や新メニューで売上をのばそう。']},
+};
+const dayInfo=d=>DAY_INFO[Math.min(d,6)];
+
+const GRADE={
+  perfect:{label:'ぴったり！', color:'#FCE1DA', mul:1.5},
+  good:{label:'いい感じ！', color:'#EAF2C8', mul:1.2},
+  close:{label:'おしい！', color:'#FBF5E8', mul:0.8},
+  miss:{label:'ざんねん…', color:'#D7D2C6', mul:0.3},
+  spill:{label:'こぼれた！', color:'#D7D2C6', mul:0},
+  timeout:{label:'時間切れ…', color:'#D7D2C6', mul:0},
+};
+const DOWN={perfect:'good',good:'close',close:'miss',miss:'miss'};
+const LINES={
+  perfect:['しゅわっと最高！','線ぴったり！さすが！','これこれ、この味！'],
+  good:['おいしい〜！','いい感じだね','ごちそうさま！'],
+  close:['うーん、おしい！','ちょっとちがうかも…','まあ、おいしいよ'],
+  miss:['あれれ…？','思ってたのと違う…','ま、まあいっか…'],
+  spill:['わわっ、あふれてる！','カウンターがびしょびしょ！'],
+  timeout:['もう行かなきゃ…','また来るね…'],
+};
+
+function makeOrder(day, prev, ctx){
+  const simple=!!ctx.simple;
+  const pool=GLASS_KEYS.filter(k=>GLASSES[k].day<=day);
+  const newest=pool[pool.length-1];
+  let glass=(GLASSES[newest].day===day && Math.random()<0.45)?newest:pick(pool);
+  if(simple) glass='tumbler';
+  const g=GLASSES[glass];
+  const extras=EXTRA_FRUITS.filter(f=>ctx.owned[f]);
+  let A,B;
+  if(!simple && extras.length && Math.random()<0.5){ A=pick(extras); const others=[...BASE_FRUITS,...extras].filter(f=>f!==A); B=Math.random()<0.6?pick(BASE_FRUITS):pick(others); }
+  else { A=pick(BASE_FRUITS); B=A==='peach'?'pear':'peach'; }
+  if(Math.random()<0.5) [A,B]=[B,A];
+  const foamK=Math.max(FRUIT[A].foamMul,FRUIT[B].foamMul);
+  const maxTop=0.88-g.foamMax*foamK*0.6;
+  const kind=(!simple && ctx.opts.mix && Math.random()<0.28)?'mix':'layer';
+  let n=1, layers=null, req={}, lines=[], ratio=0, total;
+  if(kind==='layer'){
+    const p2=day<2?0:0.55, p3=day>=4?0.22:0; const r=Math.random(); n=r<p3?3:r<p3+p2?2:1; if(simple) n=1;
+    const seq=[A]; for(let i=1;i<n;i++) seq.push(seq[i-1]===A?B:A);
+    const minLayer=n===1?0.35:0.16;
+    total=rand(Math.max(0.45,minLayer*n+0.05),maxTop);
+    let tops=[total];
+    if(n>1){ let cuts=[]; for(let t=0;t<30;t++){ cuts=[]; for(let i=0;i<n-1;i++) cuts.push(rand(minLayer,total-minLayer)); cuts.sort((a,b)=>a-b); let ok=true,p=0; for(const c of cuts){ if(c-p<minLayer) ok=false; p=c; } if(total-p<minLayer) ok=false; if(ok) break; } tops=[...cuts,total]; }
+    layers=seq.map((f,i)=>({fruit:f,top:r2(tops[i])}));
+    let pv=0; for(const L of layers){ req[L.fruit]=(req[L.fruit]||0)+L.top-pv; pv=L.top; }
+    lines=layers.map(L=>({top:L.top,color:FRUIT[L.fruit].line,label:FRUIT[L.fruit].name}));
+  } else {
+    n=2; total=r2(rand(0.5,maxTop)); ratio=pick([0.3,0.4,0.5,0.6,0.7]);
+    req[A]=ratio*total; req[B]=(1-ratio)*total;
+    lines=[{top:total,color:'#8B5A3A',label:'ミックス'}];
+  }
+  const ice=(!simple && ctx.opts.ice && Math.random()<0.33)?(glass==='flute'?1:1+Math.floor(Math.random()*(glass==='coupe'?2:3))):0;
+  let species; do{ species=pick(SPECIES_KEYS); }while(species===prev);
+  const special=!simple && day>=3 && Math.random()<0.12*ctx.perks.special;
+  const patienceMax=(Math.max(8.5,15.5-(day-1)*1.1)+(n-1)*3.5+(kind==='mix'?2.5:0)+ice*1.3+((glass==='flute'||glass==='coupe')?1.5:0))*ctx.perks.patience;
+  return {glass, kind, n, layers, req, lines, ratio, A, B, ice, total:lines[lines.length-1].top, species, special, patienceMax, id:Math.random()};
+}
+function orderSay(o){
+  const nm=f=>FRUIT[f].name;
+  const ice=o.ice?`氷${o.ice}個、`:'';
+  if(o.special) return `${ice}きらめき${nm(o.A)}ソーダを、ぴったりでね♪`;
+  if(o.kind==='mix') return `${ice}${nm(o.A)}${Math.round(o.ratio*10)}：${nm(o.B)}${10-Math.round(o.ratio*10)}のミックスで！`;
+  const F=o.layers.map(l=>nm(l.fruit));
+  if(o.n===1) return `${ice}${F[0]}ソーダを線まで、おねがい！`;
+  if(o.n===2) return `${ice}${F[0]}の上に${F[1]}をかさねてね`;
+  return `${ice}${F[0]}・${F[1]}・${F[2]}の三層で！`;
+}
+
+/* =========================================================
+   Save: this browser always, plus the viewer's own account copy when available
+   ========================================================= */
+const SAVE_KEY='shuwatto-cafe-v1';
+const defaultSave=()=>({v:2,unlocked:1,best:{},stars:{},species:{},glasses:{},legend:0,muted:false,bgm:true,opts:{ice:true,mix:true},wallet:0,total:0,owned:{},nick:'',updatedAt:0});
+const normSave=s=>{ const d=defaultSave(); const n={...d,...(s||{})}; n.opts={...d.opts,...(n.opts||{})}; n.owned={...(n.owned||{})}; return n; };
+function loadLocal(){ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s) return normSave(s); }catch(e){} return defaultSave(); }
+function writeLocal(s){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(s)); }catch(e){} }
+
+// 引き継ぎコード: 保存データを文字列にして、別の端末・別の場所へ手で移す（サーバーなし）
+const CODE_HEAD='SHUWA1-';
+const sum4=t=>{ let h=7; for(let i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))>>>0; return h.toString(36).slice(-4).padStart(4,'0'); };
+function saveToCode(s){
+  const {updatedAt,...rest}=s;
+  let bin=''; new TextEncoder().encode(JSON.stringify(rest)).forEach(b=>{ bin+=String.fromCharCode(b); });
+  const b64=btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return CODE_HEAD+b64+'.'+sum4(b64);
+}
+function codeToSave(code){
+  const c=String(code||'').replace(/\s+/g,'');
+  if(!c.startsWith(CODE_HEAD)) return null;
+  const [b64,chk]=c.slice(CODE_HEAD.length).split('.');
+  if(!b64||sum4(b64)!==chk) return null;
+  try{
+    const bin=atob(b64.replace(/-/g,'+').replace(/_/g,'/'));
+    const s=JSON.parse(new TextDecoder().decode(Uint8Array.from(bin,ch=>ch.charCodeAt(0))));
+    const obj=v=>v&&typeof v==='object'&&!Array.isArray(v);
+    if(!obj(s)||!Number.isInteger(s.unlocked)||s.unlocked<1||!Number.isFinite(s.wallet||0)||!obj(s.best||{})||!obj(s.owned||{})) return null;
+    return normSave(s);
+  }catch(e){ return null; }
+}
+// ホーム画面版（claude.ai の外に置く版）。ビルド時に window.SHUWATTO_HOME=true が入る
+const HOME_APP=!!window.SHUWATTO_HOME;
+
+const Cloud={
+  db:null, user:null, uid:null, status:'loading', canWrite:null, listeners:new Set(), chain:Promise.resolve(), pendingSave:null,
+  on(fn){ this.listeners.add(fn); return ()=>this.listeners.delete(fn); },
+  emit(){ for(const f of this.listeners) f(); },
+  async init(){
+    try{
+      if(!window.claude||!window.claude.use){ this.status='off'; this.emit(); return; }
+      const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);
+      this.db=db; this.user=user;
+      if(user){ this.uid=await user.id(); const c=await user.can('data.write'); this.canWrite=c; }
+      this.status=db?'ready':'off';
+    }catch(e){ this.status='off'; }
+    this.emit();
+  },
+  get personal(){ return !!(this.db&&this.uid&&this.canWrite!==false); },
+  async loadSave(){ if(!this.db||!this.uid) return null; try{ const s=await this.db.doc(`data/users/${this.uid}/save`).get(); return s.exists?s.data():null; }catch(e){ return null; } },
+  queue(task){ this.chain=this.chain.then(task).catch(()=>{}); return this.chain; },
+  saveProgress(data){
+    if(!this.personal) return; this.pendingSave=JSON.parse(JSON.stringify(data));
+    this.queue(async()=>{ const d=this.pendingSave; if(!d) return; this.pendingSave=null;
+      try{ await this.db.doc(`data/users/${this.uid}/save`).set(d); }catch(e){ if(e&&e.code==='invalid_argument'){ this.canWrite=false; this.emit(); } } });
+  },
+  submitScore(save){
+    if(!this.db||!this.uid||!save.nick||this.canWrite===false) return Promise.resolve(false);
+    const best=Math.max(0,...Object.values(save.best||{}).map(Number));
+    const bestDay=Math.max(0,...Object.keys(save.best||{}).map(Number));
+    const doc={nick:String(save.nick).slice(0,12),best,bestDay,total:Math.round(save.total||0),updatedAt:Date.now()};
+    return this.queue(async()=>{ try{ await this.db.doc(`scores/${this.uid}`).set(doc); this.lastSubmit=true; }catch(e){ this.lastSubmit=false; if(e&&e.code==='invalid_argument'){ this.canWrite=false; this.emit(); } } }).then(()=>this.lastSubmit);
+  },
+};
+
+/* =========================================================
+   Sound (WebAudio, synthesized)
+   ========================================================= */
+const midi=m=>440*Math.pow(2,(m-69)/12);
+class Sfx{
+  constructor(){ this.ctx=null; this.muted=false; this.bgmOn=false; }
+  init(){
+    if(this.ctx){ if(this.ctx.state==='suspended') this.ctx.resume(); this.syncBgm(); return; }
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+      const c=this.ctx=new AC();
+      this.master=c.createGain(); this.master.gain.value=this.muted?0:0.55; this.master.connect(c.destination);
+      const len=c.sampleRate*2, buf=c.createBuffer(1,len,c.sampleRate), d=buf.getChannelData(0);
+      for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+      const mk=(type,f,q)=>{ const s=c.createBufferSource(); s.buffer=buf; s.loop=true; const fl=c.createBiquadFilter(); fl.type=type; fl.frequency.value=f; fl.Q.value=q; const g=c.createGain(); g.gain.value=0; s.connect(fl); fl.connect(g); g.connect(this.master); s.start(); return {g,fl}; };
+      this.fizz=mk('highpass',3200,0.5);
+      this.pour=mk('bandpass',700,1.4);
+      const lfo=c.createOscillator(); lfo.frequency.value=9; const lg=c.createGain(); lg.gain.value=260; lfo.connect(lg); lg.connect(this.pour.fl.frequency); lfo.start();
+      this.bgmGain=c.createGain(); this.bgmGain.gain.value=0; this.bgmGain.connect(this.master);
+      this.syncBgm();
+    }catch(e){ this.ctx=null; }
+  }
+  setMuted(m){ this.muted=m; if(this.master) this.master.gain.value=m?0:0.55; }
+  setLevels(flow,fizz){ if(!this.ctx) return; const t=this.ctx.currentTime; this.pour.g.gain.setTargetAtTime(flow*0.32,t,0.04); this.fizz.g.gain.setTargetAtTime(fizz*0.05,t,0.15); }
+  tone(f,d,{type='sine',vol=0.15,at=0,slide=null,attack=0.006,dest=null,when=null}={}){
+    const c=this.ctx; if(!c) return; const t=when??(c.currentTime+at); const o=c.createOscillator(), g=c.createGain();
+    o.type=type; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(slide,t+d);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+attack); g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(g); g.connect(dest||this.master); o.start(t); o.stop(t+d+0.05);
+  }
+  bell(){ this.tone(1568,0.45,{type:'triangle',vol:0.1}); this.tone(1175,0.6,{type:'triangle',vol:0.1,at:0.13}); }
+  tap(){ this.tone(660,0.05,{vol:0.05}); }
+  clink(){ this.tone(2600,0.12,{type:'triangle',vol:0.07}); this.tone(3400,0.18,{vol:0.05,at:0.04}); }
+  coin(){ this.tone(1319,0.12,{type:'square',vol:0.04}); this.tone(1976,0.3,{type:'square',vol:0.04,at:0.08}); }
+  perfect(){ [1047,1319,1568,2093].forEach((f,i)=>this.tone(f,0.32,{vol:0.11,at:i*0.065})); }
+  good(){ [880,1175].forEach((f,i)=>this.tone(f,0.3,{vol:0.1,at:i*0.08})); }
+  bad(){ this.tone(392,0.35,{type:'triangle',slide:262,vol:0.1}); }
+  spill(){ this.tone(300,0.5,{type:'sawtooth',slide:120,vol:0.05}); }
+  legend(){ [523,659,784,1047,1319,1568,2093,2637].forEach((f,i)=>this.tone(f,0.5,{type:'triangle',vol:0.09,at:i*0.06})); [2637,3136].forEach((f,i)=>this.tone(f,1.2,{vol:0.05,at:0.55+i*0.1})); }
+  fanfare(ok){ (ok?[784,988,1175,1568]:[523,494,440]).forEach((f,i)=>this.tone(f,0.4,{type:'triangle',vol:0.1,at:i*0.12})); }
+  /* gentle kissaten BGM: Fmaj7 - Dm7 - Gm7 - C7, swung eighths */
+  setBgm(on){ this.bgmOn=on; this.syncBgm(); }
+  syncBgm(){
+    const c=this.ctx; if(!c) return;
+    if(this.bgmOn&&!this.bgmTimer){ this.nextBeat=c.currentTime+0.1; this.beat=0; this.bgmTimer=setInterval(()=>this.sched(),60); this.bgmGain.gain.setTargetAtTime(1,c.currentTime,0.6); }
+    else if(!this.bgmOn&&this.bgmTimer){ clearInterval(this.bgmTimer); this.bgmTimer=null; this.bgmGain.gain.setTargetAtTime(0,c.currentTime,0.3); }
+  }
+  sched(){
+    const c=this.ctx; const spb=60/92;
+    const CH=[[53,57,60,64],[50,53,57,60],[55,58,62,65],[48,52,55,58]];
+    const MEL=[72,74,76,77,79,81,84];
+    while(this.nextBeat<c.currentTime+0.25){
+      const b=this.beat, t=this.nextBeat, ch=CH[Math.floor(b/8)%4], pos=b%8;
+      if(pos===0||pos===4) this.tone(midi(ch[0]-12),0.5,{type:'sine',vol:0.09,when:t,dest:this.bgmGain});
+      if(pos===2||pos===6||pos===7&&Math.random()<0.4) ch.forEach(m=>this.tone(midi(m),0.32,{type:'triangle',vol:0.022,when:t,dest:this.bgmGain}));
+      if(Math.random()<0.28) this.tone(midi(pick(MEL)),0.45,{type:'sine',vol:0.028,when:t,dest:this.bgmGain});
+      this.nextBeat+=spb/2*(pos%2===0?1.16:0.84); this.beat++;
+    }
+  }
+}
+
+/* =========================================================
+   Textures
+   ========================================================= */
+function canvasTex(w,h,draw){ const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d'); draw(x,w,h); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4; t.userData.redraw=()=>{ x.clearRect(0,0,w,h); draw(x,w,h); t.needsUpdate=true; }; return t; }
+function toonGradient(){ const d=new Uint8Array([95,175,255]); const t=new THREE.DataTexture(d,3,1,THREE.RedFormat); t.minFilter=t.magFilter=THREE.NearestFilter; t.needsUpdate=true; return t; }
+const starTex=()=>canvasTex(64,64,(x)=>{ const g=x.createRadialGradient(32,32,0,32,32,30); g.addColorStop(0,'rgba(255,255,255,.85)'); g.addColorStop(.3,'rgba(255,255,255,.18)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64); x.fillStyle='#fff'; x.beginPath(); x.moveTo(32,1); x.quadraticCurveTo(35,29,63,32); x.quadraticCurveTo(35,35,32,63); x.quadraticCurveTo(29,35,1,32); x.quadraticCurveTo(29,29,32,1); x.fill(); });
+const glowTex=()=>canvasTex(64,64,(x)=>{ const g=x.createRadialGradient(32,32,0,32,32,31); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.25,'rgba(255,255,255,.5)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64); });
+const ringTex=()=>canvasTex(128,128,(x)=>{ x.strokeStyle='rgba(255,255,255,.5)'; x.lineWidth=5; x.beginPath(); x.arc(64,64,56,0,Math.PI*2); x.stroke(); x.strokeStyle='rgba(255,255,255,.95)'; x.lineWidth=8; x.lineCap='round'; x.beginPath(); x.arc(64,64,42,Math.PI*1.12,Math.PI*1.45); x.stroke(); x.fillStyle='rgba(255,255,255,.9)'; x.beginPath(); x.arc(78,40,4,0,7); x.fill(); });
+const blobTex=()=>canvasTex(128,128,(x)=>{ const g=x.createRadialGradient(64,64,0,64,64,62); g.addColorStop(0,'rgba(20,40,28,.42)'); g.addColorStop(.6,'rgba(20,40,28,.18)'); g.addColorStop(1,'rgba(20,40,28,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); });
+const doilyTex=()=>canvasTex(512,512,(x)=>{
+  const c=256; x.fillStyle='#FFFDF7';
+  x.beginPath(); x.arc(c,c,222,0,Math.PI*2); x.fill();
+  const N=30; for(let i=0;i<N;i++){ const a=i/N*Math.PI*2; x.beginPath(); x.arc(c+Math.cos(a)*226,c+Math.sin(a)*226,26,0,Math.PI*2); x.fill(); }
+  x.globalCompositeOperation='destination-out';
+  for(let i=0;i<N;i++){ const a=(i+.5)/N*Math.PI*2; x.beginPath(); x.arc(c+Math.cos(a)*212,c+Math.sin(a)*212,8,0,Math.PI*2); x.fill(); }
+  for(let i=0;i<48;i++){ const a=i/48*Math.PI*2; x.beginPath(); x.arc(c+Math.cos(a)*186,c+Math.sin(a)*186,5,0,Math.PI*2); x.fill(); }
+  for(let i=0;i<20;i++){ const a=(i+.5)/20*Math.PI*2; x.beginPath(); x.ellipse(c+Math.cos(a)*150,c+Math.sin(a)*150,14,6,a,0,Math.PI*2); x.fill(); }
+  x.globalCompositeOperation='source-over';
+  x.strokeStyle='#E9DCC4'; x.lineWidth=3; x.beginPath(); x.arc(c,c,168,0,Math.PI*2); x.stroke(); x.beginPath(); x.arc(c,c,128,0,Math.PI*2); x.stroke();
+});
+function drawFruit2D(x,fruit,cx,cy,s){
+  x.save(); x.translate(cx,cy); x.lineWidth=s*0.08; x.strokeStyle='#1B3324'; x.lineJoin='round'; x.lineCap='round';
+  const leaf=(lx,ly,rot,col='#7FA437')=>{ x.save(); x.translate(lx,ly); x.rotate(rot); x.fillStyle=col; x.beginPath(); x.moveTo(0,0); x.quadraticCurveTo(s*.3,-s*.3,s*.65,0); x.quadraticCurveTo(s*.3,s*.22,0,0); x.fill(); x.lineWidth=s*.06; x.stroke(); x.restore(); };
+  if(fruit==='peach'){
+    const g=x.createRadialGradient(-s*.35,-s*.3,s*.1,0,0,s); g.addColorStop(0,'#FFF1E6'); g.addColorStop(.55,'#F7B0A8'); g.addColorStop(1,'#E8707A');
+    x.fillStyle=g; x.beginPath(); x.moveTo(0,-s*.78); x.bezierCurveTo(s*.95,-s*.95,s*1.05,s*.55,0,s*.85); x.bezierCurveTo(-s*1.05,s*.55,-s*.95,-s*.95,0,-s*.78); x.fill(); x.stroke();
+    x.strokeStyle='rgba(200,80,90,.8)'; x.lineWidth=s*.06; x.beginPath(); x.moveTo(0,-s*.7); x.quadraticCurveTo(-s*.25,0,0,s*.6); x.stroke();
+    x.strokeStyle='#1B3324'; leaf(s*.05,-s*.8,-0.6);
+  } else if(fruit==='pear'){
+    const g=x.createRadialGradient(-s*.3,-s*.1,s*.1,0,s*.2,s); g.addColorStop(0,'#F6FAD8'); g.addColorStop(.6,'#C9DE84'); g.addColorStop(1,'#93B446');
+    x.fillStyle=g; x.beginPath(); x.moveTo(0,-s*.95); x.bezierCurveTo(s*.32,-s*.95,s*.3,-s*.4,s*.45,-s*.15); x.bezierCurveTo(s*.85,s*.25,s*.8,s*.95,0,s*.95); x.bezierCurveTo(-s*.8,s*.95,-s*.85,s*.25,-s*.45,-s*.15); x.bezierCurveTo(-s*.3,-s*.4,-s*.32,-s*.95,0,-s*.95); x.fill(); x.stroke();
+    x.strokeStyle='#6B4A2B'; x.lineWidth=s*.09; x.beginPath(); x.moveTo(0,-s*.95); x.lineTo(s*.08,-s*1.25); x.stroke();
+    x.fillStyle='rgba(140,110,40,.35)'; for(let i=0;i<9;i++){ x.beginPath(); x.arc(Math.sin(i*2.4)*s*.4,s*.1+Math.cos(i*1.7)*s*.45,s*.03,0,7); x.fill(); }
+  } else if(fruit==='mikan'){
+    const g=x.createRadialGradient(-s*.3,-s*.3,s*.1,0,0,s); g.addColorStop(0,'#FFE7BF'); g.addColorStop(.55,'#FFAE45'); g.addColorStop(1,'#E2780F');
+    x.fillStyle=g; x.beginPath(); x.ellipse(0,s*.08,s*.9,s*.78,0,0,Math.PI*2); x.fill(); x.stroke();
+    x.fillStyle='rgba(190,90,10,.35)'; for(let i=0;i<12;i++){ x.beginPath(); x.arc(Math.sin(i*2.1)*s*.55,s*.1+Math.cos(i*1.3)*s*.45,s*.035,0,7); x.fill(); }
+    x.fillStyle='#5E8A22'; x.beginPath(); x.arc(0,-s*.68,s*.09,0,7); x.fill(); leaf(s*.05,-s*.7,-0.45,'#6F9A2E');
+  } else if(fruit==='budou'){
+    for(const [gx,gy] of [[-.4,-.28],[0,-.32],[.4,-.28],[-.2,.06],[.2,.06],[0,.42]]){ const gg=x.createRadialGradient((gx-.08)*s,(gy-.08)*s,s*.02,gx*s,gy*s,s*.3); gg.addColorStop(0,'#E8D6FA'); gg.addColorStop(.5,'#A57ACF'); gg.addColorStop(1,'#6B3D9A'); x.fillStyle=gg; x.beginPath(); x.arc(gx*s,gy*s,s*.27,0,Math.PI*2); x.fill(); x.stroke(); }
+    x.strokeStyle='#6B4A2B'; x.lineWidth=s*.09; x.beginPath(); x.moveTo(0,-s*.58); x.lineTo(s*.06,-s*.85); x.stroke(); x.strokeStyle='#1B3324'; leaf(s*.06,-s*.7,-0.4,'#6F9A2E');
+  } else if(fruit==='ramune'){
+    const g=x.createRadialGradient(-s*.25,-s*.25,s*.05,0,0,s*.75); g.addColorStop(0,'#FFFFFF'); g.addColorStop(.5,'#BFE6F5'); g.addColorStop(1,'#5FB3D6');
+    x.fillStyle=g; x.beginPath(); x.arc(0,0,s*.7,0,Math.PI*2); x.fill(); x.stroke();
+    x.fillStyle='rgba(255,255,255,.9)'; x.beginPath(); x.ellipse(-s*.25,-s*.28,s*.16,s*.09,-0.6,0,Math.PI*2); x.fill();
+    x.lineWidth=s*.05; x.strokeStyle='#2C8FC0'; for(const [bx,by,br] of [[.75,-.55,.12],[.9,-.15,.08],[-.85,.45,.1],[.65,.6,.07]]){ x.beginPath(); x.arc(bx*s,by*s,br*s,0,Math.PI*2); x.stroke(); }
+  }
+  x.restore();
+}
+function labelTex(fruit){
+  return canvasTex(1024,256,(x,w,h)=>{
+    const F=FRUIT[fruit];
+    x.fillStyle=F.btn[0]; x.fillRect(0,0,w,h);
+    x.fillStyle='#CF3B35'; x.fillRect(0,0,w,18); x.fillRect(0,h-18,w,18);
+    x.fillStyle='#1F4A31'; x.fillRect(0,18,w,6); x.fillRect(0,h-24,w,6);
+    x.globalAlpha=0.28; x.fillStyle=F.line;
+    for(let i=0;i<w;i+=36){ x.beginPath(); x.arc(i+18,44,5,0,7); x.fill(); x.beginPath(); x.arc(i,h-44,5,0,7); x.fill(); }
+    x.globalAlpha=1;
+    const cx=w/2, cy=h/2;
+    x.fillStyle='#1F4A31'; x.beginPath(); x.arc(cx-110,cy,66,0,7); x.fill();
+    x.strokeStyle='#FBF5E8'; x.lineWidth=3; x.beginPath(); x.arc(cx-110,cy,58,0,7); x.stroke();
+    drawFruit2D(x,fruit,cx-110,cy+6,44);
+    x.fillStyle='#1F4A31'; x.textAlign='left'; x.textBaseline='middle';
+    const nm=F.name; x.font=`700 ${nm.length>2?72:86}px "Kaisei Decol", "Hiragino Mincho ProN", serif`; x.fillText(nm,cx-28,cy-14);
+    x.fillStyle='#CF3B35'; x.font='italic 34px "DM Serif Display", Georgia, serif'; x.fillText('Sparkling',cx-22,cy+50);
+  });
+}
+const neonTex=()=>canvasTex(512,256,(x,w,h)=>{
+  x.clearRect(0,0,w,h); x.textAlign='center'; x.textBaseline='middle'; x.lineJoin='round';
+  x.shadowColor='#5FD49A'; x.shadowBlur=16; x.strokeStyle='#A8F0C8'; x.lineWidth=7; x.beginPath(); if(x.roundRect) x.roundRect(16,16,w-32,h-32,44); else x.rect(16,16,w-32,h-32); x.stroke();
+  x.font='700 140px "Kaisei Decol", "Hiragino Mincho ProN", serif';
+  x.shadowColor='#FF4F8B'; x.shadowBlur=26; x.fillStyle='#FF6FA3'; x.fillText('喫茶',w/2,h/2+8); x.fillText('喫茶',w/2,h/2+8);
+  x.shadowBlur=0; x.lineWidth=2.5; x.strokeStyle='#FFE6F0'; x.strokeText('喫茶',w/2,h/2+8);
+});
+
+/* =========================================================
+   3D helpers
+   ========================================================= */
+const OUTLINE_VS=`uniform float uW; void main(){ vec3 p=position+normal*uW; gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0); }`;
+const OUTLINE_FS=`uniform vec3 uC; void main(){ gl_FragColor=vec4(uC,1.0);
+#include <colorspace_fragment>
+}`;
+function addOutline(mesh,w=0.016,color='#1B3324'){
+  const s=mesh.scale; const avg=(Math.abs(s.x)+Math.abs(s.y)+Math.abs(s.z))/3||1;
+  const m=new THREE.ShaderMaterial({uniforms:{uW:{value:w/avg},uC:{value:new THREE.Color(color)}},vertexShader:OUTLINE_VS,fragmentShader:OUTLINE_FS,side:THREE.BackSide});
+  const o=new THREE.Mesh(mesh.geometry,m); o.raycast=()=>{}; mesh.add(o); return o;
+}
+function glassMaterial(side){
+  return new THREE.ShaderMaterial({
+    uniforms:{uTint:{value:new THREE.Color('#E6F4EA')},uAlpha:{value:1}},
+    vertexShader:`varying vec3 vN; varying vec3 vV; void main(){ vec4 mv=modelViewMatrix*vec4(position,1.0); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
+    fragmentShader:`uniform vec3 uTint; uniform float uAlpha; varying vec3 vN; varying vec3 vV;
+      void main(){ vec3 n=normalize(vN); if(!gl_FrontFacing) n=-n; float d=abs(dot(n,normalize(vV))); float fr=pow(1.0-d,2.3);
+        float b1=smoothstep(-0.68,-0.58,n.x)*(1.0-smoothstep(-0.44,-0.34,n.x));
+        float b2=smoothstep(0.58,0.64,n.x)*(1.0-smoothstep(0.68,0.76,n.x));
+        float a=0.07+fr*0.62+b1*0.55+b2*0.3; vec3 col=mix(uTint,vec3(1.0),clamp(fr*0.6+b1+b2,0.0,1.0));
+        gl_FragColor=vec4(col,clamp(a,0.0,0.92)*uAlpha);
+        #include <colorspace_fragment>
+      }`,
+    transparent:true, depthWrite:false, side
+  });
+}
+function glassProfile(def){
+  const P=[]; const V=(x,y)=>P.push(new V2(Math.max(0.0001,x),y)); const N=30, w=def.wall;
+  if(def.stem){ const s=def.stem; V(0,0); V(s.foot,0); V(s.foot,0.025); V(s.foot*0.55,0.05); V(s.r*1.6,0.1); V(s.r,0.18); V(s.r,def.baseY-0.12); V(s.r*1.5,def.baseY-0.07); V(def.r(0)*0.8+w,def.baseY-0.03); }
+  else { V(0,0); V(def.r(0)+w-0.025,0); V(def.r(0)+w,0.025); }
+  for(let i=0;i<=N;i++){ const y=i/N; V(def.r(y)+w,def.baseY+y*def.H); }
+  V(def.r(1)+w*0.5,def.baseY+def.H+0.014);
+  for(let i=N;i>=0;i--){ const y=i/N; V(def.r(y),def.baseY+y*def.H); }
+  V(0,def.baseY);
+  return P;
+}
+
+/* particles: camera-facing sprites */
+class Sprites{
+  constructor(n,tex,additive){
+    this.n=n; this.i=0;
+    const g=this.geo=new THREE.BufferGeometry();
+    this.pos=new Float32Array(n*3); this.col=new Float32Array(n*3); this.size=new Float32Array(n); this.alpha=new Float32Array(n);
+    this.vel=new Float32Array(n*3); this.life=new Float32Array(n); this.max=new Float32Array(n); this.base=new Float32Array(n); this.a0=new Float32Array(n); this.grav=new Float32Array(n); this.tw=new Float32Array(n);
+    g.setAttribute('position',new THREE.BufferAttribute(this.pos,3)); g.setAttribute('aColor',new THREE.BufferAttribute(this.col,3)); g.setAttribute('aSize',new THREE.BufferAttribute(this.size,1)); g.setAttribute('aAlpha',new THREE.BufferAttribute(this.alpha,1));
+    this.mat=new THREE.ShaderMaterial({uniforms:{uTex:{value:tex},uScale:{value:600}},
+      vertexShader:`attribute vec3 aColor; attribute float aSize; attribute float aAlpha; varying vec3 vC; varying float vA; uniform float uScale;
+        void main(){ vC=aColor; vA=aAlpha; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_PointSize=aSize*uScale/max(0.1,-mv.z); gl_Position=projectionMatrix*mv; }`,
+      fragmentShader:`uniform sampler2D uTex; varying vec3 vC; varying float vA; void main(){ vec4 t=texture2D(uTex,gl_PointCoord); gl_FragColor=vec4(vC*t.rgb,t.a*vA); if(gl_FragColor.a<0.01) discard;
+        #include <colorspace_fragment>
+      }`,
+      transparent:true, depthWrite:false, blending:additive?THREE.AdditiveBlending:THREE.NormalBlending});
+    this.points=new THREE.Points(g,this.mat); this.points.frustumCulled=false; this.points.renderOrder=8;
+    this.tmpC=new THREE.Color();
+  }
+  emit(p,v,{size=0.15,life=0.8,color='#ffffff',grav=0,alpha=1,twinkle=0}={}){
+    const i=this.i; this.i=(this.i+1)%this.n;
+    this.pos.set([p.x,p.y,p.z],i*3); this.vel.set([v.x,v.y,v.z],i*3);
+    this.tmpC.set(color); this.col.set([this.tmpC.r,this.tmpC.g,this.tmpC.b],i*3);
+    this.base[i]=size; this.life[i]=life; this.max[i]=life; this.grav[i]=grav; this.a0[i]=alpha; this.tw[i]=twinkle;
+  }
+  update(dt,time){
+    for(let i=0;i<this.n;i++){
+      if(this.life[i]<=0){ this.alpha[i]=0; continue; }
+      this.life[i]-=dt; const k=i*3;
+      this.vel[k+1]-=this.grav[i]*dt; const drag=Math.exp(-dt*1.8);
+      this.vel[k]*=drag; this.vel[k+1]*=drag; this.vel[k+2]*=drag;
+      this.pos[k]+=this.vel[k]*dt; this.pos[k+1]+=this.vel[k+1]*dt; this.pos[k+2]+=this.vel[k+2]*dt;
+      const t=clamp(this.life[i]/this.max[i],0,1);
+      const fadeIn=clamp((1-t)/0.12,0,1);
+      let a=this.a0[i]*Math.min(fadeIn,t*2.2);
+      if(this.tw[i]) a*=0.55+0.45*Math.sin(time*18+i*1.7);
+      this.alpha[i]=Math.max(0,a);
+      this.size[i]=this.base[i]*(0.5+0.5*Math.sin(Math.min(1,(1-t)*3)*Math.PI*0.5))*(0.6+0.4*t);
+    }
+    const g=this.geo; g.attributes.position.needsUpdate=true; g.attributes.aAlpha.needsUpdate=true; g.attributes.aSize.needsUpdate=true; g.attributes.aColor.needsUpdate=true;
+  }
+}
+
+/* =========================================================
+   Engine (three.js scene)
+   ========================================================= */
+class Engine{
+  constructor(canvas){
+    const R=this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+    R.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+    R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
+    this.scene=new THREE.Scene(); this.scene.background=new THREE.Color('#183B27');
+    this.camera=new THREE.PerspectiveCamera(45,1,0.1,80);
+    this.camTarget=new V3(0,1.62,-0.45); this.camDir=new V3(0,0.40,1).normalize(); this.camDist=8.4;
+    this.grad=toonGradient(); this.time=0; this.anchors={}; this.w=1; this.h=1;
+    this.texStar=starTex(); this.texRing=ringTex(); this.texBlob=blobTex(); this.texGlow=glowTex();
+    this.geoCache=new Map(); this.labelCache={};
+    this.buildRoom(); this.buildDecor(); this.buildShopDecor(); this.buildBottles(); this.buildFX();
+    this.glassGroup=new THREE.Group(); this.scene.add(this.glassGroup);
+    this.buildLiquidMats();
+    this.glassMatBack=glassMaterial(THREE.BackSide); this.glassMatFront=glassMaterial(THREE.FrontSide);
+    this.iceMat=new THREE.MeshToonMaterial({color:'#E9F7FF',gradientMap:this.grad,transparent:true,opacity:0.88});
+    this.iceLineMat=new THREE.MeshBasicMaterial({color:'#2E6E8A',side:THREE.BackSide});
+    this.lines=[]; this.ringMeshes=[]; this.ice=[];
+    this.level=0; this.foam=0; this.segs=[]; this.mix=null;
+    this.tilt={}; this.flow={}; this.bubEl=null; this.bubSide=null;
+    this.glassAnim={kind:'idle',t:0}; this.cust=null;
+    this.tmp=new V3(); this.tmp2=new V3(); this.mixCol=new THREE.Color(); this.mixCol2=new THREE.Color();
+    this.setGlass('tumbler');
+  }
+  toon(c,extra={}){ return new THREE.MeshToonMaterial({color:new THREE.Color(c),gradientMap:this.grad,...extra}); }
+  geo(key,make){ if(!this.geoCache.has(key)) this.geoCache.set(key,make()); return this.geoCache.get(key); }
+  isCached(g){ for(const v of this.geoCache.values()) if(v===g) return true; return false; }
+
+  buildRoom(){
+    const s=this.scene;
+    s.add(new THREE.HemisphereLight(0xFFF1DE,0x2A5C3D,1.15));
+    const key=this.key=new THREE.DirectionalLight(0xFFFFFF,1.8); key.position.set(-3.2,7,5.5); key.castShadow=true;
+    key.shadow.mapSize.set(1024,1024); const sc=key.shadow.camera; sc.left=-3.5; sc.right=3.5; sc.top=3.5; sc.bottom=-3.5; sc.near=1; sc.far=20; key.shadow.bias=-0.0006; key.shadow.normalBias=0.02; s.add(key);
+    const rim=new THREE.DirectionalLight(0xFFD7CC,0.6); rim.position.set(4,3,-3); s.add(rim);
+    const wallMat=new THREE.ShaderMaterial({uniforms:{uA:{value:new THREE.Color('#1F4A31')},uB:{value:new THREE.Color('#25553A')}},
+      vertexShader:`varying vec3 vW; void main(){ vec4 w=modelMatrix*vec4(position,1.0); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }`,
+      fragmentShader:`uniform vec3 uA,uB; varying vec3 vW; void main(){ float f=fract(vW.x*2.4); float s=smoothstep(0.46,0.5,f)*(1.0-smoothstep(0.96,1.0,f)); vec3 c=mix(uA,uB,s);
+        float pin=1.0-smoothstep(0.0,0.012,abs(f-0.73)); c=mix(c,vec3(0.85,0.75,0.45),pin*0.18);
+        c*=mix(1.0,0.7,smoothstep(2.5,8.0,vW.y)); gl_FragColor=vec4(c,1.0);
+        #include <colorspace_fragment>
+      }`});
+    const wall=new THREE.Mesh(new THREE.PlaneGeometry(14,16),wallMat); wall.position.set(0,4,-4.3); s.add(wall);
+    const wain=new THREE.Mesh(new THREE.BoxGeometry(14,1.4,0.1),this.toon('#3B2A1E')); wain.position.set(0,-0.2,-4.2); s.add(wain);
+    const rail=new THREE.Mesh(new THREE.BoxGeometry(14,0.08,0.18),this.toon('#D9B24C')); rail.position.set(0,0.52,-4.15); s.add(rail);
+    const arch=(w,h)=>{ const sh=new THREE.Shape(); const r=w/2; sh.moveTo(-r,0); sh.lineTo(r,0); sh.lineTo(r,h-r); sh.absarc(0,h-r,r,0,Math.PI,false); sh.lineTo(-r,0); return sh; };
+    const frame=new THREE.Mesh(new THREE.ShapeGeometry(arch(3.0,3.7),48),this.toon('#F1E4CA')); frame.position.set(0,0.3,-4.22); s.add(frame);
+    const frameLine=new THREE.Mesh(new THREE.ShapeGeometry(arch(3.16,3.78),48),new THREE.MeshBasicMaterial({color:'#132E1F'})); frameLine.position.set(0,0.26,-4.23); s.add(frameLine);
+    const glow=new THREE.Mesh(new THREE.ShapeGeometry(arch(2.6,3.4),48),new THREE.ShaderMaterial({uniforms:{uStained:{value:0}},
+      vertexShader:`varying vec2 vP; void main(){ vP=position.xy; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+      fragmentShader:`uniform float uStained; varying vec2 vP;
+        float hash(vec2 p){ return fract(sin(dot(p,vec2(41.3,289.1)))*43758.5453); }
+        void main(){ float t=vP.y/3.4; vec3 top=vec3(1.0,0.93,0.82); vec3 bot=vec3(0.98,0.74,0.68); vec3 c=mix(bot,top,smoothstep(0.0,0.9,t));
+          float mx=1.0-smoothstep(0.025,0.04,abs(vP.x)); float my=1.0-smoothstep(0.025,0.04,abs(vP.y-1.75));
+          float arcR=length(vec2(vP.x,vP.y-2.1)); float ma=(1.0-smoothstep(0.025,0.04,abs(arcR-0.62)))*step(2.1,vP.y);
+          float m=max(max(mx,my),ma);
+          if(uStained>0.5){
+            vec2 g=vec2(vP.x*2.6,vP.y*2.2); vec2 id=floor(g); float h=hash(id+vec2(step(2.1,vP.y)*7.0,0.0));
+            vec3 pal[5]; pal[0]=vec3(0.97,0.62,0.62); pal[1]=vec3(0.75,0.85,0.45); pal[2]=vec3(0.98,0.82,0.42); pal[3]=vec3(0.55,0.78,0.92); pal[4]=vec3(0.85,0.68,0.95);
+            vec3 pc=pal[int(floor(h*4.99))];
+            vec2 f=fract(g); float lead=1.0-smoothstep(0.0,0.06,min(min(f.x,1.0-f.x),min(f.y,1.0-f.y)));
+            if(arcR<0.66&&vP.y>2.1){ float a=atan(vP.y-2.1,vP.x); float wv=a*6.0/3.1416; pc=pal[int(mod(floor(wv)+2.0,5.0))]; lead=smoothstep(0.42,0.5,abs(fract(wv)-0.5)); lead=max(lead,1.0-smoothstep(0.0,0.035,abs(arcR-0.62))); }
+            c=mix(c,pc*mix(0.85,1.05,t),0.82); c=mix(c,vec3(0.16,0.2,0.18),lead*0.85);
+            m*=0.0;
+          }
+          c=mix(c,vec3(0.95,0.89,0.78),m);
+          gl_FragColor=vec4(c,1.0);
+          #include <colorspace_fragment>
+        }`}));
+    glow.position.set(0,0.45,-4.21); s.add(glow); this.windowMat=glow.material;
+    const top=new THREE.Mesh(new THREE.BoxGeometry(12,0.16,3.7),this.toon('#F3E8D3')); top.position.set(0,-0.08,0.05); top.receiveShadow=true; s.add(top);
+    const edge=new THREE.Mesh(new THREE.BoxGeometry(12,0.12,0.09),this.toon('#CF3B35')); edge.position.set(0,-0.08,1.94); s.add(edge);
+    const frontMat=new THREE.ShaderMaterial({uniforms:{uA:{value:new THREE.Color('#1D4630')},uB:{value:new THREE.Color('#163824')}},
+      vertexShader:`varying vec3 vW; void main(){ vec4 w=modelMatrix*vec4(position,1.0); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }`,
+      fragmentShader:`uniform vec3 uA,uB; varying vec3 vW; void main(){ float f=fract(vW.x*3.0); vec3 c=mix(uA,uB,smoothstep(0.88,0.95,f)); c=mix(c,uA*1.25,1.0-smoothstep(0.0,0.06,f)); gl_FragColor=vec4(c,1.0);
+        #include <colorspace_fragment>
+      }`});
+    const front=new THREE.Mesh(new THREE.BoxGeometry(12,3,0.2),frontMat); front.position.set(0,-1.65,1.88); s.add(front);
+    const ledge=new THREE.Mesh(new THREE.BoxGeometry(12,0.9,0.32),this.toon('#E6D7BA')); ledge.position.set(0,0.45,-1.7); ledge.receiveShadow=true; s.add(ledge);
+    const ledgeTop=new THREE.Mesh(new THREE.BoxGeometry(12,0.07,0.46),this.toon('#CF3B35')); ledgeTop.position.set(0,0.92,-1.7); s.add(ledgeTop);
+    const doily=new THREE.Mesh(new THREE.CircleGeometry(0.78,64),new THREE.MeshToonMaterial({map:doilyTex(),gradientMap:this.grad,transparent:true,alphaTest:0.5}));
+    doily.rotation.x=-Math.PI/2; doily.position.y=0.004; doily.receiveShadow=true; s.add(doily);
+  }
+  makePeach(scale=1){
+    const g=new THREE.Group();
+    const geo=this.geo('peach',()=>{ const ge=new THREE.SphereGeometry(0.5,40,28); const p=ge.attributes.position; const cols=[]; const c1=new THREE.Color('#FFE9DC'), c2=new THREE.Color('#F4A3A0'), c3=new THREE.Color('#E0606D'), c=new THREE.Color();
+      for(let i=0;i<p.count;i++){ const x=p.getX(i),y=p.getY(i),z=p.getZ(i); const crease=Math.exp(-Math.pow(x/0.06,2))*(z>0?1:0)*0.035; p.setZ(i,z-crease); const t=clamp((y+0.5)*0.9+x*0.6,0,1.4); c.copy(c1).lerp(c2,clamp(t,0,1)); if(t>1) c.lerp(c3,t-1); cols.push(c.r,c.g,c.b); }
+      ge.setAttribute('color',new THREE.Float32BufferAttribute(cols,3)); ge.computeVertexNormals(); return ge; });
+    const body=new THREE.Mesh(geo,new THREE.MeshToonMaterial({vertexColors:true,gradientMap:this.grad})); body.scale.set(1,0.96,0.96); body.castShadow=true; g.add(body); addOutline(body,0.016);
+    const leaf=new THREE.Mesh(this.geo('leaf',()=>new THREE.SphereGeometry(0.2,16,10)),this.toon('#7FA437')); leaf.scale.set(1,0.25,0.5); leaf.position.set(0.16,0.5,0.02); leaf.rotation.z=0.5; g.add(leaf); addOutline(leaf,0.012);
+    const stem=new THREE.Mesh(this.geo('stem',()=>new THREE.CylinderGeometry(0.025,0.03,0.12,8)),this.toon('#6B4A2B')); stem.position.set(0,0.5,0); g.add(stem);
+    g.scale.setScalar(scale); return g;
+  }
+  makePear(scale=1){
+    const g=new THREE.Group();
+    const geo=this.geo('pear',()=>{ const pts=[]; for(let i=0;i<=24;i++){ const t=i/24; const y=-0.5+t*1.15; const r=0.42*Math.pow(Math.sin(Math.PI*Math.min(1,t*1.05)),0.7)*(t<0.5?1:1-0.55*smooth(0.45,0.9,t))+0.0001; pts.push(new V2(r,y)); }
+      const ge=new THREE.LatheGeometry(pts,36); const p=ge.attributes.position; const cols=[]; const c1=new THREE.Color('#F2F7CF'), c2=new THREE.Color('#BFD674'), c3=new THREE.Color('#8BAE3E'), c=new THREE.Color();
+      for(let i=0;i<p.count;i++){ const x=p.getX(i),y=p.getY(i); const t=clamp(0.5-y*0.6+x*0.5,0,1.3); c.copy(c1).lerp(c2,clamp(t,0,1)); if(t>1) c.lerp(c3,(t-1)*2); cols.push(c.r,c.g,c.b); }
+      ge.setAttribute('color',new THREE.Float32BufferAttribute(cols,3)); return ge; });
+    const body=new THREE.Mesh(geo,new THREE.MeshToonMaterial({vertexColors:true,gradientMap:this.grad})); body.castShadow=true; g.add(body); addOutline(body,0.016);
+    const stem=new THREE.Mesh(this.geo('stem2',()=>new THREE.CylinderGeometry(0.022,0.03,0.2,8)),this.toon('#6B4A2B')); stem.position.set(0.02,0.72,0); stem.rotation.z=-0.2; g.add(stem);
+    const leaf=new THREE.Mesh(this.geo('leaf',()=>new THREE.SphereGeometry(0.2,16,10)),this.toon('#6F9A2E')); leaf.scale.set(0.9,0.22,0.45); leaf.position.set(0.17,0.72,0); leaf.rotation.z=0.35; g.add(leaf); addOutline(leaf,0.012);
+    g.scale.setScalar(scale); return g;
+  }
+  buildDecor(){
+    this.decor=[];
+    const add=(obj,x,y,z,spin)=>{ obj.position.set(x,y,z); obj.userData={base:new V3(x,y,z),spin,ph:Math.random()*6}; this.scene.add(obj); this.decor.push(obj); };
+    add(this.makePeach(1.05),-2.25,3.05,-3.3,0.25);
+    add(this.makePear(0.95),2.3,2.75,-3.3,-0.2);
+    add(this.makePeach(0.55),2.15,4.25,-3.6,0.4);
+    add(this.makePear(0.5),-2.05,4.5,-3.6,-0.35);
+    const shelfMat=this.toon('#7A4E2E'); this.jars={};
+    for(const sx of [-2.3,2.3]){
+      const sh=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.07,0.35),shelfMat); sh.position.set(sx,1.55,-4.05); sh.castShadow=true; this.scene.add(sh);
+      for(let i=0;i<3;i++){ const col=['#F4A7A2','#BFD674','#F1E4CA'][(i+(sx>0?1:0))%3]; const grp=new THREE.Group(); grp.position.set(sx-0.45+i*0.45,0,-4.0); this.scene.add(grp);
+        const jar=new THREE.Mesh(this.geo('jar',()=>new THREE.CylinderGeometry(0.13,0.13,0.32,20)),this.toon(col)); jar.position.y=1.75; grp.add(jar); addOutline(jar,0.012);
+        const lid=new THREE.Mesh(this.geo('lid',()=>new THREE.CylinderGeometry(0.14,0.14,0.06,20)),this.toon('#D9B24C')); lid.position.y=1.94; grp.add(lid);
+        this.jars[`${sx<0?'L':'R'}${i}`]=grp; }
+    }
+  }
+  buildShopDecor(){
+    const s=this.scene; this.shop={};
+    // plants on the back ledge
+    const plants=new THREE.Group(); s.add(plants); this.shop.plant=plants;
+    for(const px of [-1.72,1.72]){
+      const pot=new THREE.Mesh(this.geo('pot',()=>new THREE.CylinderGeometry(0.2,0.15,0.3,20)),this.toon('#C8754A')); pot.position.set(px,1.11,-1.7); pot.castShadow=true; plants.add(pot); addOutline(pot,0.012);
+      const rim=new THREE.Mesh(this.geo('potrim',()=>new THREE.CylinderGeometry(0.22,0.22,0.06,20)),this.toon('#B5643C')); rim.position.set(px,1.26,-1.7); plants.add(rim);
+      for(let i=0;i<7;i++){ const a=i/7*Math.PI*2+(px>0?0.4:0); const lf=new THREE.Mesh(this.geo('sph',()=>new THREE.SphereGeometry(1,32,22)),this.toon(i%2?'#5E8A22':'#7FA437')); lf.scale.set(0.09,0.32,0.05); lf.position.set(px+Math.cos(a)*0.12,1.5,-1.7+Math.sin(a)*0.12); lf.rotation.set(Math.sin(a)*0.6,0,-Math.cos(a)*0.6); plants.add(lf); addOutline(lf,0.008); }
+    }
+    // pendant lamps
+    const lamps=new THREE.Group(); s.add(lamps); this.shop.lamp=lamps; this.lampGlows=[];
+    for(const lx of [-1.45,1.45]){
+      const cord=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,3,6),new THREE.MeshBasicMaterial({color:'#2A1D14'})); cord.position.set(lx,4.35,-1.6); lamps.add(cord);
+      const prof=[]; for(let i=0;i<=12;i++){ const t=i/12; prof.push(new V2(0.045+0.22*Math.pow(t,1.6),0.2-t*0.25)); }
+      const shade=new THREE.Mesh(new THREE.LatheGeometry(prof,32),this.toon('#F2C14E',{side:THREE.DoubleSide})); shade.position.set(lx,2.85,-1.6); lamps.add(shade); addOutline(shade,0.014);
+      const bulb=new THREE.Mesh(this.geo('sph',()=>new THREE.SphereGeometry(1,32,22)),new THREE.MeshBasicMaterial({color:'#FFF2C8'})); bulb.scale.setScalar(0.07); bulb.position.set(lx,2.8,-1.6); lamps.add(bulb);
+      const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:this.texGlow,color:'#FFD98A',transparent:true,opacity:0.55,depthWrite:false,blending:THREE.AdditiveBlending})); glow.scale.set(0.85,0.85,1); glow.position.set(lx,2.78,-1.55); lamps.add(glow); this.lampGlows.push(glow);
+    }
+    this.lampLight=new THREE.PointLight(0xFFD08A,0,7,1.6); this.lampLight.position.set(0,2.6,-1.2); s.add(this.lampLight);
+    // record player on the left shelf (replaces the middle jar)
+    const rec=new THREE.Group(); rec.position.set(-2.3,1.585,-4.0); s.add(rec); this.shop.record=rec;
+    const base=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.13,0.4),this.toon('#8A5632')); base.position.y=0.065; rec.add(base);
+    const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.19,0.02,32),this.toon('#1D1D22')); disc.position.set(-0.06,0.14,0); rec.add(disc); this.recDisc=disc;
+    const lab=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.022,20),this.toon('#CF3B35')); lab.position.set(0,0.002,0); disc.add(lab);
+    const mark=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.024,0.1),this.toon('#F1E4CA')); mark.position.set(0.11,0.003,0); disc.add(mark);
+    const arm=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.03,0.3),this.toon('#D9B24C')); arm.position.set(0.21,0.17,-0.02); arm.rotation.y=0.35; rec.add(arm);
+    const horn=new THREE.Mesh(new THREE.ConeGeometry(0.16,0.32,24,1,true),this.toon('#D9B24C',{side:THREE.DoubleSide})); horn.position.set(0.18,0.42,-0.08); horn.rotation.set(0.2,0,-0.9); rec.add(horn); addOutline(horn,0.01);
+    // neon sign hanging in the window
+    const neon=new THREE.Group(); neon.position.set(0.82,2.0,-4.16); neon.rotation.z=-0.05; s.add(neon); this.shop.neon=neon;
+    const board=new THREE.Mesh(new THREE.PlaneGeometry(0.98,0.5),new THREE.MeshBasicMaterial({color:'#132E1F'})); neon.add(board);
+    for(const [x,y] of [[-0.3,0.25],[0.3,0.25]]){ const w=new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.006,0.5,4),new THREE.MeshBasicMaterial({color:'#2A1D14'})); w.position.set(x,y+0.25,-0.01); neon.add(w); }
+    const neonFace=new THREE.Mesh(new THREE.PlaneGeometry(1.0,0.5),new THREE.MeshBasicMaterial({map:this.neonTex=neonTex(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})); neonFace.position.z=0.005; neon.add(neonFace); this.neonFace=neonFace;
+    for(const k of ['plant','lamp','record','neon']) this.shop[k].visible=false;
+  }
+  setShop(owned){
+    for(const k of ['plant','lamp','record','neon']) this.shop[k].visible=!!owned[k];
+    this.jars.L1.visible=!owned.record;
+    this.lampLight.intensity=owned.lamp?1.1:0;
+    this.windowMat.uniforms.uStained.value=owned.stained?1:0;
+    this.owned={...owned};
+  }
+  buildBottles(){
+    this.bottles={};
+    const prof=[]; const P=(r,y)=>prof.push(new V2(Math.max(0.0001,r),y));
+    P(0,-1.32); P(0.22,-1.32); P(0.258,-1.28); P(0.265,-1.2); P(0.265,-0.62);
+    for(let i=1;i<=10;i++){ const t=i/10; P(0.265-(0.265-0.085)*(1-Math.cos(t*Math.PI))/2,-0.62+t*0.4); }
+    P(0.08,-0.12); P(0.078,-0.05); P(0.095,-0.045); P(0.095,0); P(0.05,0.005); P(0,0.005);
+    const geo=new THREE.LatheGeometry(prof,40);
+    for(const f of ALL_FRUITS){
+      const g=new THREE.Group(); const side=BOTTLE_SIDE[f];
+      const body=new THREE.Mesh(geo,this.toon('#2B6A44')); body.castShadow=true; g.add(body); addOutline(body,0.02);
+      const shine=new THREE.Mesh(this.geo('shine',()=>new THREE.CapsuleGeometry(0.025,0.5,4,8)),new THREE.MeshBasicMaterial({color:'#CFEBD8',transparent:true,opacity:0.75}));
+      shine.position.set(-0.17,-0.4,0.2); g.add(shine);
+      const label=new THREE.Mesh(new THREE.CylinderGeometry(0.272,0.272,0.5,48,1,true,-Math.PI,Math.PI*2),new THREE.MeshToonMaterial({map:this.labelFor(f),gradientMap:this.grad}));
+      label.position.y=-0.92; g.add(label);
+      const foil=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,0.1,24,1,true),new THREE.MeshStandardMaterial({color:'#D9B24C',metalness:0.6,roughness:0.3,side:THREE.DoubleSide}));
+      foil.position.y=-0.1; g.add(foil);
+      this.scene.add(g);
+      this.bottles[f]={g,side,label,home:BASE_FRUITS.includes(f)}; if(!BASE_FRUITS.includes(f)) g.visible=false;
+    }
+    this.streamMat=new THREE.ShaderMaterial({uniforms:{uColor:{value:new THREE.Color()},uTime:{value:0}},
+      vertexShader:`varying vec2 vUv; varying vec3 vN; void main(){ vUv=uv; vN=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+      fragmentShader:`uniform vec3 uColor; uniform float uTime; varying vec2 vUv; varying vec3 vN; void main(){ float s=fract(vUv.y*5.0+uTime*6.0); vec3 c=uColor*(0.9+0.15*smoothstep(0.6,0.9,s)); c=mix(c,vec3(1.0),pow(1.0-abs(vN.z),2.0)*0.35+smoothstep(-0.5,-0.3,vN.x)*(1.0-smoothstep(-0.3,-0.1,vN.x))*0.4); gl_FragColor=vec4(c,1.0);
+        #include <colorspace_fragment>
+      }`});
+    this.streams={};
+    for(const f of ALL_FRUITS){ const m=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,14,1,true),this.streamMat.clone()); m.material.uniforms.uColor.value.set(FRUIT[f].liquid); m.visible=false; this.scene.add(m); this.streams[f]=m; }
+  }
+  labelFor(f){ if(!this.labelCache[f]) this.labelCache[f]=labelTex(f); return this.labelCache[f]; }
+  refreshLabels(){ for(const f in this.labelCache) this.labelCache[f].userData.redraw(); this.neonTex.userData.redraw(); }
+  buildFX(){
+    this.sparks=new Sprites(160,this.texStar,true); this.scene.add(this.sparks.points);
+    this.bgb=new Sprites(40,this.texRing,false); this.scene.add(this.bgb.points);
+    this.bgbTimer=0; this.twTimer=0;
+    for(let i=0;i<22;i++) this.spawnBg(true);
+    const dg=new THREE.SphereGeometry(1,8,6);
+    this.drops=new THREE.InstancedMesh(dg,new THREE.MeshBasicMaterial({color:'#ffffff'}),90); this.drops.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.drops.renderOrder=3; this.drops.frustumCulled=false; this.scene.add(this.drops);
+    this.dropData=Array.from({length:90},()=>({life:0,p:new V3(),v:new V3(),s:0,floor:0}));
+    this.di=0; this.dropColor=new THREE.Color(); const c=new THREE.Color('#ffffff'); for(let i=0;i<90;i++) this.drops.setColorAt(i,c);
+    this.gb=new THREE.InstancedMesh(dg,new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:0.75}),40); this.gb.renderOrder=3; this.gb.frustumCulled=false; this.scene.add(this.gb);
+    this.gbData=Array.from({length:40},()=>({a:rand(-1,1),y:Math.random(),sp:rand(0.05,0.16),s:rand(0.012,0.026)}));
+    this.m4=new THREE.Matrix4(); this.q=new THREE.Quaternion(); this.sv=new V3(); this.sc=new V3();
+  }
+  spawnBg(init){
+    const x=rand(-3.3,3.3), y=init?rand(-0.5,7):-0.5, z=-4.12;
+    const life=rand(14,26); const sp=rand(0.15,0.32);
+    this.bgb.emit(new V3(x,y,z),new V3(rand(-0.03,0.03),sp,0),{size:rand(0.25,0.75),life:init?life*rand(0.3,1):life,color:pick(['#FBF5E8','#F4A7A2','#BFD674']),alpha:rand(0.25,0.5)});
+  }
+  emitDrop(p,v,s,color,floor=-1){ const i=this.di; const d=this.dropData[i]; this.di=(i+1)%this.dropData.length; d.life=0.6; d.p.copy(p); d.v.copy(v); d.s=s; d.floor=floor; this.dropColor.set(color); this.drops.setColorAt(i,this.dropColor); this.drops.instanceColor.needsUpdate=true; }
+
+  buildLiquidMats(){
+    const U=this.LU={uLevel:{value:0},uFoam:{value:0},uBaseY:{value:0},uH:{value:1},uTime:{value:0},uCount:{value:1},uTops:{value:[0,0,0,0,0,0]},uCols:{value:Array.from({length:6},()=>new THREE.Color('#F7B6AE'))},uFoamCol:{value:new THREE.Color('#FFF6EE')}};
+    const vs=`varying float vY; varying vec3 vP; varying vec3 vN; varying vec3 vV; void main(){ vY=position.y; vP=position; vec4 mv=modelViewMatrix*vec4(position,1.0); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`;
+    const fs=`uniform float uLevel,uFoam,uBaseY,uH,uTime,uIsTop; uniform int uCount; uniform float uTops[6]; uniform vec3 uCols[6]; uniform vec3 uFoamCol;
+      varying float vY; varying vec3 vP; varying vec3 vN; varying vec3 vV;
+      float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+      vec3 segCol(float yn){ vec3 c=uCols[0]; for(int i=1;i<6;i++){ if(i>=uCount) break; float b=uTops[i-1]; c=mix(c,uCols[i],smoothstep(b-0.018,b+0.018,yn)); } return c; }
+      float cells(vec2 g){ vec2 id=floor(g); vec2 f=fract(g)-0.5; float r=0.26+0.18*hash(id); return 1.0-smoothstep(r-0.07,r,length(f)); }
+      void main(){
+        vec3 col; vec3 n=normalize(vN); if(!gl_FrontFacing) n=-n;
+        if(uIsTop<0.5){
+          float yn=(vY-uBaseY)/uH;
+          if(yn>uLevel+uFoam) discard;
+          float ang=atan(vP.z,vP.x);
+          if(yn>uLevel){ col=uFoamCol*mix(0.84,1.02,cells(vec2(ang*10.0,vY*26.0))); }
+          else {
+            col=segCol(yn);
+            vec2 g=vec2(ang*14.0,vY*15.0-uTime*2.0); float h=hash(floor(g)); vec2 f=fract(g)-0.5;
+            float sp=(1.0-smoothstep(0.05,0.12,length(f)))*step(0.84,h);
+            col=mix(col,vec3(1.0),sp*0.8);
+            col*=0.9+0.1*smoothstep(0.0,0.35,yn);
+          }
+          col*=0.84+0.22*clamp(0.5-n.x*0.7,0.0,1.0);
+          float fr=pow(1.0-abs(dot(n,normalize(vV))),2.0); col=mix(col,vec3(1.0),fr*0.2);
+        } else {
+          bool foamy=uFoam>0.006;
+          col=foamy?uFoamCol:segCol(uLevel-0.001);
+          float c=cells(vP.xz*7.0+vec2(0.0,foamy?0.0:uTime*0.25));
+          col*=foamy?mix(0.88,1.03,c):mix(1.0,1.1,c*0.5);
+          float rr=length(vP.xz); col=mix(col,vec3(1.0),smoothstep(0.85,1.0,rr)*0.25);
+        }
+        gl_FragColor=vec4(col,1.0);
+        #include <colorspace_fragment>
+      }`;
+    this.liquidMat=new THREE.ShaderMaterial({uniforms:{...U,uIsTop:{value:0}},vertexShader:vs,fragmentShader:fs});
+    this.liquidTopMat=new THREE.ShaderMaterial({uniforms:{...U,uIsTop:{value:1}},vertexShader:vs,fragmentShader:fs});
+  }
+
+  setGlass(key){
+    const G=this.glassGroup;
+    for(const c of [...G.children]){ G.remove(c); c.traverse(o=>{ if(o.geometry && !this.isCached(o.geometry)) o.geometry.dispose(); }); }
+    this.ice=[];
+    const def=this.gdef=GLASSES[key];
+    const geo=new THREE.LatheGeometry(glassProfile(def),56);
+    const back=new THREE.Mesh(geo,this.glassMatBack); back.renderOrder=1; G.add(back);
+    const front=new THREE.Mesh(geo,this.glassMatFront); front.renderOrder=6; G.add(front);
+    if(def.handle){ const hg=new THREE.TorusGeometry(0.3,0.055,12,32,Math.PI); const h=new THREE.Mesh(hg,this.glassMatFront); h.rotation.z=-Math.PI/2; h.position.set(def.r(0.5)+def.wall,def.baseY+def.H*0.5,0); h.renderOrder=6; G.add(h); }
+    const lp=[new V2(0.0001,def.baseY+0.004)]; for(let i=0;i<=40;i++){ const y=i/40; lp.push(new V2(Math.max(0.0005,def.r(y)-0.008),def.baseY+Math.max(0.004,y*def.H))); }
+    this.liquid=new THREE.Mesh(new THREE.LatheGeometry(lp,48),this.liquidMat); this.liquid.renderOrder=2; G.add(this.liquid);
+    this.liquidTop=new THREE.Mesh(this.geo('disc',()=>new THREE.CircleGeometry(1,48).rotateX(-Math.PI/2)),this.liquidTopMat); this.liquidTop.renderOrder=2; G.add(this.liquidTop);
+    this.blobMat=this.blobMat||new THREE.MeshBasicMaterial({map:this.texBlob,transparent:true,depthWrite:false});
+    const blob=new THREE.Mesh(this.geo('blob',()=>new THREE.PlaneGeometry(1,1).rotateX(-Math.PI/2)),this.blobMat);
+    const br=(def.stem?def.stem.foot:def.r(0)+def.wall)*2.5; blob.scale.set(br,1,br); blob.position.y=0.006; blob.renderOrder=0; G.add(blob);
+    this.LU.uBaseY.value=def.baseY; this.LU.uH.value=def.H;
+    this.ringMeshes=[];
+    this.setLines(this.lines);
+  }
+  setLines(lines){
+    this.lines=lines||[];
+    for(const m of this.ringMeshes){ this.glassGroup.remove(m); m.geometry.dispose(); }
+    this.ringMeshes=[];
+    const def=this.gdef;
+    this.lines.forEach(L=>{ const r=def.r(L.top)+def.wall+0.006; const m=new THREE.Mesh(new THREE.TorusGeometry(r,0.016,8,72),new THREE.MeshBasicMaterial({color:L.color})); m.rotation.x=Math.PI/2; m.position.y=def.baseY+L.top*def.H; m.renderOrder=4; this.glassGroup.add(m); this.ringMeshes.push(m); });
+  }
+  addIce(){
+    const def=this.gdef; const i=this.ice.length; const s=Math.min(0.19,def.r(0.5)*0.46);
+    const m=new THREE.Mesh(this.geo('cube',()=>new THREE.BoxGeometry(1,1,1)),this.iceMat); m.scale.setScalar(s); m.renderOrder=3;
+    const ol=new THREE.Mesh(this.geo('cube',()=>new THREE.BoxGeometry(1,1,1)),this.iceLineMat); ol.scale.setScalar(1.12); m.add(ol);
+    const ang=i*2.4+rand(-0.3,0.3); const rad=(def.r(0.25)-s*0.7)*(i===0?0.15:0.7);
+    const need=Math.max(0,rad)+s*0.75; let yn=0; while(yn<0.95&&def.r(yn)<need) yn+=0.02;
+    m.userData={s,x:Math.cos(ang)*Math.max(0,rad),z:Math.sin(ang)*Math.max(0,rad),y:this.glassTopY()+0.7,vy:0,rest:def.baseY+yn*def.H+s*0.5+(i>=2?s*0.85:0)+(i>=3?s*0.2:0),rx:rand(-0.4,0.4),ry:rand(0,3),wet:false,ph:rand(0,6)};
+    this.glassGroup.add(m); this.ice.push(m);
+  }
+  glassTopY(){ return this.gdef.baseY+this.gdef.H; }
+  setLiquid(level,foam,segs,mix){ this.level=level; this.foam=foam; this.segs=segs; this.mix=mix; }
+  setPour(tilt,flow){ this.tilt=tilt; this.flow=flow; }
+  glassIn(){ this.glassAnim={kind:'in',t:0}; }
+  glassServe(){ this.glassAnim={kind:'serve',t:0}; }
+  glassOut(withCustomer){ this.glassAnim={kind:withCustomer?'carry':'away',t:0}; }
+
+  /* ---- customers ---- */
+  buildAnimal(key,special){
+    const sp=SPECIES[key]; const g=new THREE.Group(); const T=c=>this.toon(c);
+    const parts={}; const SPH=this.geo('sph',()=>new THREE.SphereGeometry(1,32,22));
+    const mk=(geo,mat,pos,scale,parent=g,ol=0.016)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(...pos); if(scale) (Array.isArray(scale)?m.scale.set(...scale):m.scale.setScalar(scale)); m.castShadow=true; parent.add(m); if(ol) addOutline(m,ol); return m; };
+    const bodyMat=T(sp.body), faceMat=T(sp.face), accMat=T(sp.accent), outfit=T(sp.outfit), dark=T('#1B2620'), cheek=T('#F49A98'), white=new THREE.MeshBasicMaterial({color:'#ffffff'});
+    mk(this.geo('torso',()=>new THREE.CapsuleGeometry(0.36,0.55,8,20)),bodyMat,[0,0.12,0]);
+    if(key==='penguin'||key==='kitsune') mk(SPH,accMat,[0,0.18,0.2],[0.27,0.38,0.18],g,0);
+    const wing=this.geo('wing',()=>new THREE.ConeGeometry(0.09,0.19,16));
+    const w1=mk(wing,outfit,[-0.09,0.66,0.3],null,g,0.01); w1.rotation.z=Math.PI/2; const w2=mk(wing,outfit,[0.09,0.66,0.3],null,g,0.01); w2.rotation.z=-Math.PI/2; mk(SPH,outfit,[0,0.66,0.32],0.05,g,0.008);
+    parts.arms=[-1,1].map(s=>{ const piv=new THREE.Group(); piv.position.set(s*0.33,0.5,0.02); g.add(piv); mk(this.geo('arm',()=>new THREE.CapsuleGeometry(0.085,0.26,6,12)),bodyMat,[0,-0.2,0],null,piv,0.012); return piv; });
+    const head=new THREE.Group(); head.position.y=1.02; g.add(head); parts.head=head;
+    mk(SPH,faceMat,[0,0,0],[0.45,0.42,0.43],head,0.02);
+    if(sp.ears==='long'){ for(const s of [-1,1]){ const e=mk(this.geo('ear-long',()=>new THREE.CapsuleGeometry(0.085,0.42,6,14)),faceMat,[s*0.16,0.58,-0.02],null,head); e.rotation.z=-s*0.16; const inner=mk(this.geo('ear-in',()=>new THREE.CapsuleGeometry(0.045,0.32,6,10)),accMat,[0,0.0,0.06],null,e,0); inner.scale.z=0.5; } }
+    if(sp.ears==='round'){ for(const s of [-1,1]){ mk(SPH,faceMat,[s*0.31,0.3,-0.03],0.14,head); mk(SPH,accMat,[s*0.31,0.3,0.06],[0.08,0.08,0.05],head,0); } }
+    if(sp.ears==='tri'||sp.ears==='tall'){ const tall=sp.ears==='tall'; for(const s of [-1,1]){ const e=mk(this.geo(tall?'ear-tall':'ear-tri',()=>new THREE.ConeGeometry(tall?0.15:0.14,tall?0.38:0.28,20)),faceMat,[s*0.25,tall?0.45:0.4,-0.02],null,head); e.rotation.z=-s*(tall?0.32:0.38); const inner=mk(this.geo('ear-tin',()=>new THREE.ConeGeometry(0.08,0.18,14)),accMat,[0,-0.02,0.07],null,e,0); inner.scale.z=0.4; } }
+    if(sp.ears==='side'){ for(const s of [-1,1]){ const e=mk(SPH,faceMat,[s*0.47,0.05,0],[0.16,0.07,0.09],head); e.rotation.z=s*0.4; } }
+    if(sp.wool){ const woolMat=T('#FFFBF2'); [[0,0.38,-0.05],[-0.2,0.33,0.02],[0.2,0.33,0.02],[-0.33,0.18,-0.08],[0.33,0.18,-0.08],[0,0.32,0.2],[-0.12,0.42,-0.15],[0.12,0.42,-0.15]].forEach(p=>mk(SPH,woolMat,p,0.15,head,0.012)); for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; mk(SPH,woolMat,[Math.cos(a)*0.33,0.5+Math.sin(i*1.7)*0.03,Math.sin(a)*0.2],0.16,g,0.012); } }
+    if(sp.beak){ mk(SPH,accMat,[0,-0.04,0.12],[0.36,0.32,0.34],head,0); const b=mk(this.geo('beak',()=>new THREE.ConeGeometry(0.07,0.16,16)),T('#F2A23A'),[0,-0.06,0.46],null,head,0.01); b.rotation.x=Math.PI/2; }
+    if(sp.muzzle){ mk(SPH,accMat,[0,-0.1,0.33],[0.17,0.12,0.12],head,0.01); mk(SPH,dark,[0,-0.05,0.45],0.035,head,0); }
+    else if(!sp.beak){ mk(SPH,dark,[0,-0.06,0.43],0.028,head,0); }
+    parts.eyes=[-1,1].map(s=>{ const e=mk(SPH,dark,[s*0.15,0.04,0.39],[0.05,0.06,0.04],head,0); mk(SPH,white,[0.35,0.4,0.6],0.32,e,0); return e; });
+    for(const s of [-1,1]) mk(SPH,cheek,[s*0.27,-0.09,0.33],[0.07,0.045,0.03],head,0);
+    if(special){ const gold=new THREE.MeshStandardMaterial({color:'#E3BC4E',metalness:0.55,roughness:0.3,emissive:'#5a4200'}); const crown=new THREE.Group(); crown.position.set(0.05,0.44,-0.02); crown.rotation.z=-0.18; head.add(crown);
+      const band=new THREE.Mesh(this.geo('crown',()=>new THREE.CylinderGeometry(0.17,0.17,0.1,24,1,true)),gold); band.material.side=THREE.DoubleSide; crown.add(band);
+      for(let i=0;i<5;i++){ const a=i/5*Math.PI*2; const sp2=new THREE.Mesh(this.geo('spike',()=>new THREE.ConeGeometry(0.045,0.12,10)),gold); sp2.position.set(Math.sin(a)*0.16,0.1,Math.cos(a)*0.16); crown.add(sp2); const gem=new THREE.Mesh(SPH,new THREE.MeshBasicMaterial({color:i%2?'#F06A7A':'#9BD36A'})); gem.scale.setScalar(0.025); gem.position.set(Math.sin(a)*0.172,0.0,Math.cos(a)*0.172); crown.add(gem); }
+      parts.crown=crown; }
+    return {g,parts};
+  }
+  customerEnter(key,special){
+    if(this.cust) this.removeCustomer(this.cust);
+    const a=this.buildAnimal(key,special);
+    a.g.position.set(3.4,0,-2.35); this.scene.add(a.g);
+    this.cust={...a,key,special,state:'walk',from:3.4,to:0,t:0,dur:0.85,x:3.4,react:null,rt:0,blink:rand(1.5,3.5)};
+  }
+  customerExit(){ if(!this.cust) return; const c=this.cust; c.state='walk'; c.from=c.x; c.to=-3.6; c.t=0; c.dur=0.8; c.leaving=true; c.react=null; }
+  customerReact(kind){ if(!this.cust) return; this.cust.react=kind; this.cust.rt=0; }
+  removeCustomer(c){ this.scene.remove(c.g); c.g.traverse(o=>{ if(o.material && o.material.dispose) o.material.dispose(); }); if(this.cust===c) this.cust=null; }
+
+  burst(kind){
+    const top=this.tmp.set(this.glassGroup.position.x,this.glassTopY()+0.05,this.glassGroup.position.z);
+    const n={perfect:28,good:14,legend:90,small:10}[kind]||12;
+    const cols=kind==='legend'?['#FF6F91','#FFB15C','#FFE86B','#8EDB7F','#62C6F2','#B597FF']:['#FFFFFF','#FFE9A8','#FFD0CA','#E9F5C0'];
+    for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2; const sp=kind==='legend'?rand(1.5,3.6):rand(0.8,2.0);
+      this.sparks.emit(top.clone().add(new V3(rand(-0.2,0.2),rand(-0.3,0.2),rand(-0.1,0.1))),new V3(Math.cos(a)*sp,Math.abs(Math.sin(a))*sp*0.9+0.4,rand(-0.3,0.3)),{size:rand(0.14,kind==='legend'?0.42:0.3),life:rand(0.7,1.3),color:pick(cols),grav:1.4,twinkle:1}); }
+  }
+  customerBurst(){ if(!this.cust) return; const p=this.cust.g.position.clone().add(new V3(0,1.7,0.2)); for(let i=0;i<8;i++) this.sparks.emit(p.clone().add(new V3(rand(-0.5,0.5),rand(-0.2,0.3),0)),new V3(rand(-0.4,0.4),rand(0.3,0.9),0),{size:rand(0.12,0.22),life:rand(0.6,1),color:pick(['#FFFFFF','#FFD0CA','#FFE9A8']),twinkle:1}); }
+  spillFX(color){ const def=this.gdef; const gp=this.glassGroup.position; for(let i=0;i<3;i++){ const a=rand(-1.3,1.3); const r=def.r(1)+def.wall; this.emitDrop(new V3(gp.x+Math.sin(a)*r,this.glassTopY(),gp.z+Math.cos(a)*r),new V3(Math.sin(a)*0.25,rand(-0.1,0.2),Math.cos(a)*0.25),rand(0.025,0.045),color,0.02); } }
+
+  resize(w,h){
+    this.w=w; this.h=h; this.renderer.setSize(w,h,false);
+    const aspect=w/h; this.camera.aspect=aspect;
+    const D=this.camDist, needHalfW=1.6, needHalfH=3.45;
+    const t=Math.max(needHalfW/(D*aspect),needHalfH/D);
+    this.camera.fov=2*Math.atan(t)*180/Math.PI;
+    this.camera.position.copy(this.camTarget).addScaledVector(this.camDir,D);
+    this.camera.lookAt(this.camTarget);
+    this.camera.clearViewOffset();
+    this.camera.updateProjectionMatrix();
+    this.camera.updateMatrixWorld();
+    this.fitGlass(t);
+    const sc=h*this.renderer.getPixelRatio()/(2*Math.tan(this.camera.fov*Math.PI/360));
+    this.sparks.mat.uniforms.uScale.value=sc; this.bgb.mat.uniforms.uScale.value=sc;
+  }
+  /* 低い画面では上下の HUD がグラスを隠すので、HUD のあいだの帯にグラス全体（カウンター〜いちばん背の高いグラスの上）が入るよう、引いてからずらす。縦長のスマホではそのまま */
+  setInsets(top,bottom){
+    if(Math.abs(top-(this.insetT||0))<4&&Math.abs(bottom-(this.insetB||0))<4) return;
+    this.insetT=top; this.insetB=bottom; if(this.w) this.resize(this.w,this.h);
+  }
+  fitGlass(t){
+    const T=this.insetT||0, B=this.insetB||0, h=this.h, m=6, band=h-T-B-m*2;
+    if(band<40) return;
+    // グラスの定位置（出し入れのアニメ中に測っても同じになるように）
+    const span=()=>({lo:this.project(new V3(0,-0.02,0)).y, hi:this.project(new V3(0,2.3,0)).y});
+    let s=span();
+    if(s.lo-s.hi>band){ this.camera.fov=2*Math.atan(t*(s.lo-s.hi)/band)*180/Math.PI; this.camera.updateProjectionMatrix(); s=span(); }
+    if(s.lo<=h-B-m&&s.hi>=T+m) return;
+    const dy=(s.lo+s.hi)/2-(T+m+band/2);
+    this.camera.setViewOffset(this.w,h,0,dy,this.w,h);
+  }
+  project(v){ const p=this.tmp2.copy(v).project(this.camera); return {x:(p.x*0.5+0.5)*this.w,y:(-p.y*0.5+0.5)*this.h}; }
+  place(el,v,dx=0,dy=0){ if(!el) return; const p=this.project(v); el.style.transform=`translate3d(${(p.x+dx).toFixed(1)}px,${(p.y+dy).toFixed(1)}px,0)`; }
+
+  update(dt){
+    this.time+=dt; const t=this.time; const def=this.gdef;
+    this.LU.uTime.value=t;
+    const ga=this.glassAnim; ga.t+=dt; const G=this.glassGroup;
+    if(ga.kind==='in'){ const k=clamp(ga.t/0.5,0,1); G.visible=true; G.position.set(lerp(2.6,0,easeOutBack(k)),0,0); if(k>=1) ga.kind='idle'; }
+    else if(ga.kind==='serve'){ const k=easeInOut(clamp(ga.t/0.45,0,1)); G.position.set(0,0,lerp(0,-0.85,k)); }
+    else if(ga.kind==='carry'){ G.position.set(this.cust?this.cust.x:G.position.x-dt*4,0,-0.85); if(!this.cust||ga.t>1.2) G.visible=false; }
+    else if(ga.kind==='away'){ const k=clamp(ga.t/0.5,0,1); G.position.set(lerp(0,3,easeInOut(k)),0,G.position.z); if(k>=1) G.visible=false; }
+    else if(ga.kind==='idle'){ G.position.set(0,0,0); G.visible=true; }
+
+    // liquid uniforms
+    const L=this.LU; L.uLevel.value=this.level; L.uFoam.value=this.foam;
+    if(this.mix){ const m=this.mix; this.mixCol.set(FRUIT[m.a].liquid).lerp(this.mixCol2.set(FRUIT[m.b].liquid),clamp(1-m.wa,0,1)); L.uCount.value=1; L.uCols.value[0].copy(this.mixCol); L.uFoamCol.value.set('#FFFAF4'); }
+    else {
+      const segs=this.segs.length?this.segs:[{fruit:'peach',top:0}];
+      L.uCount.value=Math.min(6,segs.length);
+      for(let i=0;i<6;i++){ const s=segs[Math.min(i,segs.length-1)]; L.uTops.value[i]=s.top; L.uCols.value[i].set(FRUIT[s.fruit].liquid); }
+      L.uFoamCol.value.set(FRUIT[segs[segs.length-1].fruit].foam);
+    }
+    const surf=this.level+this.foam;
+    this.liquid.visible=surf>0.004; this.liquidTop.visible=surf>0.004;
+    const surfY=def.baseY+Math.min(1,surf)*def.H; const rr=Math.max(0.01,def.r(Math.min(1,surf))-0.008);
+    this.liquidTop.position.y=surfY; this.liquidTop.scale.set(rr,1,rr);
+    // flow は果汁ごと（peach / pear …）。足し合わせて全体の勢いにする（以前は flow.L+flow.R で NaN になり、液面が描かれなかった）
+    let flowAll=0; for(const f in this.flow) flowAll+=this.flow[f]||0;
+    this.liquidTop.rotation.z=Math.sin(t*11)*0.02*Math.min(1,flowAll);
+    const gp=G.position; const liqY=def.baseY+this.level*def.H;
+
+    // ice cubes
+    this.ice.forEach((m,i)=>{ const u=m.userData; const floatY=liqY-u.s*0.28+Math.sin(t*2.2+u.ph)*0.008; const target=this.level>0.03?Math.max(u.rest,floatY):u.rest;
+      if(u.y>target+0.002){ u.vy-=8*dt; u.y+=u.vy*dt; if(u.y<=target){ if(!u.wet&&this.level>0.03){ for(let k=0;k<6;k++) this.emitDrop(new V3(gp.x+u.x,liqY+0.02,gp.z+u.z),new V3(rand(-0.8,0.8),rand(0.8,1.6),rand(-0.4,0.6)),rand(0.015,0.03),pick(['#ffffff','#E9F7FF']),liqY-0.02); } u.wet=u.wet||this.level>0.03; u.y=target; u.vy=0; } }
+      else { u.y=lerp(u.y,target,clamp(dt*6,0,1)); if(this.level>0.03) u.wet=true; }
+      m.position.set(u.x,u.y,u.z); m.rotation.set(u.rx+Math.sin(t*1.7+u.ph)*0.05,u.ry,Math.cos(t*1.3+u.ph)*0.05); });
+
+    // bottles
+    const gTop=this.glassTopY();
+    for(const f of ALL_FRUITS){
+      const b=this.bottles[f]; const tl=clamp(this.tilt[f]||0,0,1); const k=easeInOut(tl); const s=b.side;
+      const ix=b.home?s*1.13:s*0.95, iy=b.home?1.34+Math.sin(t*1.6+s)*0.015:-0.25, iz=b.home?0.6:1.45;
+      b.g.visible=b.home||tl>0.002||(this.flow[f]||0)>0;
+      const px=gp.x+s*0.42, py=gTop+0.36, pz=0.18;
+      b.g.position.set(lerp(ix,px,k),lerp(iy,py,k)+Math.sin(k*Math.PI)*0.35,lerp(iz,pz,k));
+      b.g.rotation.set(0,s*0.18*(1-k),s*2.02*k+Math.sin(t*1.3+s)*0.02*(1-k));
+      const st=this.streams[f]; const fl=this.flow[f]||0;
+      if(fl>0.02 && G.visible){
+        b.g.updateMatrixWorld(); const a=b.g.localToWorld(this.tmp.set(0,0.03,0)).clone();
+        const e=new V3(gp.x+s*0.05,liqY,gp.z);
+        const dir=e.clone().sub(a); const len=dir.length(); dir.normalize();
+        st.visible=true; st.position.copy(a).addScaledVector(dir,len/2);
+        st.quaternion.setFromUnitVectors(new V3(0,1,0),dir);
+        const w=0.034*Math.sqrt(fl); st.scale.set(w,len,w); st.material.uniforms.uTime.value=t;
+        if(Math.random()<fl*0.9){ for(let i=0;i<2;i++) this.emitDrop(e.clone().add(new V3(rand(-0.05,0.05),0.01,rand(-0.05,0.05))),new V3(rand(-0.7,0.7),rand(0.6,1.5),rand(-0.3,0.4)),rand(0.012,0.028),Math.random()<0.5?'#ffffff':FRUIT[f].liquid,e.y-0.02); }
+      } else st.visible=false;
+    }
+    if(this.level>0.04 && G.visible && Math.random()<(0.25+this.foam*6+flowAll*0.6)*dt*20){
+      const a=rand(0,Math.PI*2), r=Math.sqrt(Math.random())*rr*0.85;
+      this.emitDrop(new V3(gp.x+Math.cos(a)*r,surfY+0.005,gp.z+Math.sin(a)*r),new V3(rand(-0.1,0.1),rand(0.35,0.8),rand(-0.1,0.1)),rand(0.008,0.016),'#ffffff',surfY-0.01);
+    }
+    for(let i=0;i<this.dropData.length;i++){
+      const d=this.dropData[i];
+      if(d.life>0){ d.life-=dt; d.v.y-=5.5*dt; d.p.addScaledVector(d.v,dt); if(d.p.y<d.floor && d.v.y<0) d.life=0; }
+      const s=d.life>0?d.s*Math.min(1,d.life*5):0;
+      this.m4.compose(d.p,this.q,this.sc.set(s,s,s)); this.drops.setMatrixAt(i,this.m4);
+    }
+    this.drops.instanceMatrix.needsUpdate=true;
+    for(let i=0;i<this.gbData.length;i++){
+      const b=this.gbData[i]; let s=0;
+      if(this.level>0.05 && G.visible){
+        b.y+=b.sp*dt*(1+flowAll); if(b.y>this.level-0.015){ b.y=rand(0,0.4)*this.level; b.a=rand(-1.05,1.05); }
+        const r=def.r(b.y)-0.002; const wob=Math.sin(t*3+i)*0.01;
+        this.sv.set(gp.x+Math.sin(b.a)*r+wob,def.baseY+b.y*def.H,gp.z+Math.cos(b.a)*r); s=b.s;
+      }
+      this.m4.compose(this.sv,this.q,this.sc.set(s,s,s)); this.gb.setMatrixAt(i,this.m4);
+    }
+    this.gb.instanceMatrix.needsUpdate=true;
+
+    if(this.cust) this.updateCustomer(this.cust,dt);
+    for(const d of this.decor){ const u=d.userData; d.position.y=u.base.y+Math.sin(t*0.9+u.ph)*0.08; d.rotation.y=t*u.spin; d.rotation.z=Math.sin(t*0.7+u.ph)*0.12; }
+    if(this.shop.record.visible) this.recDisc.rotation.y=-t*3.5;
+    if(this.shop.neon.visible) this.neonFace.material.opacity=0.88+0.12*Math.sin(t*23)*(Math.sin(t*0.7)>0.93?1:0.1);
+    if(this.shop.lamp.visible) this.lampGlows.forEach((g,i)=>g.material.opacity=0.5+0.06*Math.sin(t*2+i));
+    this.bgbTimer-=dt; if(this.bgbTimer<=0){ this.bgbTimer=rand(0.6,1.3); this.spawnBg(false); }
+    this.twTimer-=dt; if(this.twTimer<=0){ this.twTimer=rand(0.25,0.6); this.sparks.emit(new V3(rand(-3,3),rand(1,5.5),rand(-3.9,-3.0)),new V3(0,0.05,0),{size:rand(0.12,0.26),life:rand(0.9,1.6),color:pick(['#FFF4D6','#FFD7D0','#E9F5C0']),twinkle:1,alpha:0.9}); }
+    if(this.cust && this.cust.special && Math.random()<dt*7){ const p=this.cust.g.position.clone().add(new V3(rand(-0.5,0.5),rand(1.3,1.9),0.3)); this.sparks.emit(p,new V3(0,0.25,0),{size:rand(0.1,0.2),life:0.8,color:'#FFE27A',twinkle:1}); }
+    this.sparks.update(dt,t); this.bgb.update(dt,t);
+
+    const A=this.anchors;
+    if(A.bubble&&this.cust){ const ch=A.bubble.firstElementChild; if(ch) this.placeBubble(A.bubble,ch); else this.bubEl=null; }
+    if(A.judge) this.place(A.judge,this.tmp.set(gp.x,def.baseY+def.H*0.42,gp.z));
+    if(A.labels){ A.labels.forEach((el,i)=>{ if(!el) return; const L2=this.lines[i]; if(!L2||!G.visible||this.glassAnim.kind!=='idle'){ el.style.visibility='hidden'; return; } el.style.visibility='visible'; this.place(el,this.tmp.set(gp.x+def.r(L2.top)+def.wall+0.05,def.baseY+L2.top*def.H,gp.z),16,0); }); }
+  }
+  placeBubble(anchor,ch){
+    const h=this.cust.g.position; const cv=this.renderer.domElement;
+    const hudEl=cv.parentElement&&cv.parentElement.querySelector('.hud-top');
+    const hudB=hudEl?hudEl.getBoundingClientRect().bottom-cv.getBoundingClientRect().top:0;
+    if(ch!==this.bubEl){ this.bubEl=ch; ch.style.maxWidth=''; this.bubSide=null; }
+    const above=this.project(this.tmp.set(h.x,h.y+2.0,h.z));
+    if(!this.bubSide){
+      if(above.y-ch.offsetHeight-8>=hudB) this.bubSide='top';
+      else { const r=this.project(this.tmp.set(h.x+0.52,h.y+1.05,h.z)).x, l=this.project(this.tmp.set(h.x-0.52,h.y+1.05,h.z)).x; const roomR=this.w-r-18, roomL=l-18; this.bubSide=roomR>=roomL?'right':'left'; this.bubRoom=Math.max(roomR,roomL); }
+      anchor.dataset.side=this.bubSide;
+    }
+    let x,y;
+    if(this.bubSide==='top'){ const hw=ch.offsetWidth/2; x=clamp(above.x,hw+10,this.w-hw-10); y=Math.max(above.y,hudB+8+ch.offsetHeight); }
+    else { const right=this.bubSide==='right'; ch.style.maxWidth=Math.max(104,Math.floor(this.bubRoom))+'px'; const e=this.project(this.tmp.set(h.x+(right?0.5:-0.5),h.y+1.05,h.z)); x=e.x+(right?10:-10); y=Math.max(e.y,hudB+8+ch.offsetHeight/2); }
+    anchor.style.transform=`translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`;
+  }
+  updateCustomer(c,dt){
+    c.t+=dt; const g=c.g; const P=c.parts; const t=this.time;
+    let y=0.78, rz=0;
+    if(c.state==='walk'){ const k=clamp(c.t/c.dur,0,1); c.x=lerp(c.from,c.to,c.leaving?k*k:1-Math.pow(1-k,2)); y+=Math.abs(Math.sin(c.t*13))*0.1; rz=Math.sin(c.t*13)*0.07;
+      if(k>=1){ if(c.leaving){ this.removeCustomer(c); return; } c.state='idle'; c.t=0; } }
+    else { y+=Math.sin(t*2.4)*0.02; }
+    let armL=0.35, armR=-0.35, headRz=Math.sin(t*1.3)*0.05, headRy=0;
+    if(c.react){ c.rt+=dt; const r=c.rt;
+      if(c.react==='happy'){ if(r<1.3){ y+=Math.abs(Math.sin(r*Math.PI*2.3))*0.32*(1-r/1.4); armL=2.5; armR=-2.5; headRz=Math.sin(r*12)*0.12; } }
+      else if(c.react==='ok'){ if(r<1.0){ y+=Math.abs(Math.sin(r*Math.PI*2))*0.12; armL=1.2; armR=-0.4; } }
+      else if(c.react==='sad'){ headRy=Math.sin(r*18)*0.35*Math.exp(-r*2); armL=0.1; armR=-0.1; headRz=0.15; }
+    }
+    g.position.set(c.x,y,-2.35); g.rotation.z=rz;
+    P.head.rotation.set(0,headRy,headRz);
+    P.arms[0].rotation.z=lerp(P.arms[0].rotation.z,-armL,0.25); P.arms[1].rotation.z=lerp(P.arms[1].rotation.z,-armR,0.25);
+    c.blink-=dt; const bl=c.blink<0.12&&c.blink>0?0.15:1; if(c.blink<0) c.blink=rand(2,4.5);
+    for(const e of P.eyes) e.scale.y=0.06*bl;
+    if(P.crown) P.crown.rotation.y=t*0.8;
+  }
+  render(){ this.renderer.render(this.scene,this.camera); }
+}
+
+/* =========================================================
+   Game logic
+   ========================================================= */
+class Game{
+  constructor(engine,sfx,emit){
+    this.e=engine; this.sfx=sfx; this.emit=emit;
+    this.mode='demo'; this.paused=false; this.day=1;
+    this.tilt={}; this.flow={}; this.active=null;
+    this.ctx={opts:{ice:true,mix:true},owned:{},perks:perksOf({})};
+    this.resetGlass(); this.order=null; this.phase='idle'; this.phaseT=0;
+  }
+  resetGlass(){ this.level=0; this.foam=0; this.segs=[]; this.amt={}; this.vol={}; this.foamSpill=false; this.spillBig=false; this.iceCount=0; this.icePending=0; this.lateIce=false; }
+  get tol(){ return Math.max(0.018,0.032-0.003*(this.day-1)); }
+  get foamMul(){ const o=this.order; const fm=o?Math.max(FRUIT[o.A].foamMul,FRUIT[o.B].foamMul):1; return (1+0.08*Math.max(0,this.day-2))*fm; }
+
+  startDemo(){ this.mode='demo'; this.active=null; this.demoIdx=(this.demoIdx||0); this.startDemoOrder(); }
+  startDemoOrder(){
+    const glasses=['tumbler','goblet','flute','coupe','mug']; const g=glasses[this.demoIdx%glasses.length]; this.demoIdx++;
+    const owned=EXTRA_FRUITS.filter(f=>this.ctx.owned[f]);
+    let first=this.demoIdx%2?'peach':'pear', second=first==='peach'?'pear':'peach';
+    if(owned.length&&this.demoIdx%3===0) second=pick(owned);
+    const a=g==='coupe'?0.45:0.42, b=g==='flute'?0.72:0.8;
+    const layers=[{fruit:first,top:a},{fruit:second,top:b}];
+    this.order={glass:g,kind:'layer',layers,lines:layers.map(L=>({top:L.top,color:FRUIT[L.fruit].line,label:FRUIT[L.fruit].name})),A:first,B:second,ice:0,n:2,species:SPECIES_KEYS[this.demoIdx%6],special:false,patienceMax:99,req:{}};
+    this.resetGlass(); this.e.setGlass(g); this.e.setLines(this.order.lines); this.e.glassIn(); this.e.customerEnter(this.order.species,this.demoIdx%5===0);
+    this.demoStep=0; this.demoT=0;
+  }
+  updateDemo(dt){
+    this.demoT+=dt; const L=this.order.layers;
+    switch(this.demoStep){
+      case 0: if(this.demoT>1.1){ this.demoStep=1; this.demoT=0; } break;
+      case 1: this.active=L[0].fruit; if(this.level>=L[0].top-0.035){ this.active=null; this.demoStep=2; this.demoT=0; } break;
+      case 2: if(this.demoT>0.9){ this.demoStep=3; this.demoT=0; } break;
+      case 3: this.active=L[1].fruit; if(this.level>=L[1].top-0.035||this.level+this.foam>0.97){ this.active=null; this.demoStep=4; this.demoT=0; } break;
+      case 4: if(this.demoT>1.3){ if(this.level<L[1].top-0.05){ this.demoStep=3; this.demoT=0; break; } this.e.glassServe(); this.e.customerReact('happy'); this.e.burst('perfect'); this.demoStep=5; this.demoT=0; } break;
+      case 5: if(this.demoT>1.5){ this.e.customerExit(); this.e.glassOut(true); this.demoStep=6; this.demoT=0; } break;
+      case 6: if(this.demoT>0.9) this.startDemoOrder(); break;
+    }
+  }
+
+  setContext(ctx){ this.ctx={...ctx,perks:perksOf(ctx.owned)}; }
+  startDay(day){
+    this.mode='play'; this.day=day; this.dayLeft=DAY_LEN; this.lastCall=false;
+    this.sales=0; this.combo=0; this.maxCombo=0; this.served=0; this.perfects=0; this.tips=0; this.legends=0; this.orderCount=0;
+    this.active=null; this.prevSpecies=null; this.order=null;
+    this.e.customerExit(); this.e.glassOut(true);
+    this.phase='gap'; this.phaseT=0.35;
+  }
+  nextOrder(){
+    const o=makeOrder(this.day,this.prevSpecies,{...this.ctx,simple:this.day===1&&this.orderCount<2}); this.prevSpecies=o.species; this.orderCount++;
+    this.order=o; this.patience=o.patienceMax; this.resetGlass(); this.active=null; this.flow={};
+    this.e.setGlass(o.glass); this.e.setLines(o.lines); this.e.glassIn(); this.e.customerEnter(o.species,o.special);
+    this.phase='enter'; this.phaseT=0; this.sfx.bell();
+    this.emit('order',o);
+  }
+  press(f){ if(this.mode!=='play'||(this.phase!=='pour'&&this.phase!=='enter')) return; this.active=f; }
+  release(f){ if(this.active===f) this.active=null; }
+  canPour(){ return this.mode==='demo'||(this.mode==='play'&&this.phase==='pour'); }
+  canServe(){ return this.mode==='play'&&this.phase==='pour'&&this.level>0.04; }
+  canIce(){ return this.mode==='play'&&(this.phase==='pour'||this.phase==='enter')&&this.iceCount<ICE_MAX&&this.level<0.97; }
+  mixShare(){ const o=this.order; if(!o||o.kind!=='mix') return null; const a=this.vol[o.A]||0, b=this.vol[o.B]||0; return a+b>0.0005?a/(a+b):null; }
+  tolFor(o){ return this.tol*(o&&o.kind==='mix'?1.6:1); }
+  nextFruit(){
+    const o=this.order; if(!o||this.mode!=='play') return null; const tol=this.tolFor(o);
+    if(o.kind==='mix'){ if(this.level>=o.total-tol*0.8) return null; const a=this.vol[o.A]||0, b=this.vol[o.B]||0, s=a+b; if(s<0.0005) return o.ratio>=0.5?o.A:o.B; return (a/s<o.ratio)?o.A:o.B; }
+    for(const L of o.layers){ if(this.level<L.top-tol*0.8) return L.fruit; }
+    return null;
+  }
+  needIce(){ const o=this.order; return !!(o&&this.mode==='play'&&this.iceCount<o.ice); }
+  tutorialTip(){
+    if(this.mode!=='play'||this.day!==1||this.served>=2||this.phase!=='pour') return '';
+    const nf=this.nextFruit();
+    if(this.active) return '線の少し手前で指をはなす！';
+    if(nf&&this.level<0.03) return `「${FRUIT[nf].name}」のボタンを長押しして注ごう`;
+    if(!nf) return '線まで来たら「どうぞ！」で出そう';
+    return `もう少し！「${FRUIT[nf].name}」を足そう`;
+  }
+  serve(){ if(!this.canServe()) return; this.judge('serve'); }
+  addIce(){
+    if(!this.canIce()) return false;
+    this.iceCount++; this.e.addIce(); this.sfx.clink();
+    const vol=GLASSES[this.order.glass].V*ICE_FRAC;
+    if(this.level>0.04){ this.lateIce=true; const top=this.segs.length?this.segs[this.segs.length-1].fruit:this.order.A; this.addVolume(top,vol,false); this.foam+=0.06*this.foamMul; }
+    else this.icePending+=vol;
+    return true;
+  }
+  addVolume(f,vol,liquid=true){
+    const g=GLASSES[this.order.glass]; let rest=vol;
+    if(liquid) this.vol[f]=(this.vol[f]||0)+vol;
+    while(rest>1e-7){ const step=Math.min(rest,g.V*0.01); const r=g.r(this.level); let dl=step/(r*r);
+      if(this.level+dl>=1){ dl=Math.max(0,1-this.level); this.spillBig=true; rest=0; } else rest-=step;
+      this.level+=dl; this.amt[f]=(this.amt[f]||0)+dl; }
+    const last=this.segs[this.segs.length-1];
+    if(last&&last.fruit===f) last.top=this.level; else if(this.segs.length<6) this.segs.push({fruit:f,top:this.level}); else last.top=this.level;
+  }
+  updatePour(dt){
+    const can=this.canPour(); let flowAll=0;
+    for(const f of ALL_FRUITS){
+      const holding=can&&this.active===f;
+      const tl=clamp((this.tilt[f]||0)+(holding?dt/0.16:-dt/0.22),0,1); this.tilt[f]=tl;
+      const target=holding?smooth(0.7,1,tl):0;
+      const k=1-Math.exp(-dt/(holding?0.05:0.065));
+      let fl=(this.flow[f]||0); fl+=(target-fl)*k; if(!holding&&fl<0.004) fl=0; this.flow[f]=fl;
+      if(fl>0&&this.order&&can){
+        const g=GLASSES[this.order.glass]; const dv=g.Q*fl*dt; let extra=0;
+        if(this.icePending>0){ extra=Math.min(this.icePending,dv*0.8); this.icePending-=extra; }
+        this.vol[f]=(this.vol[f]||0)+dv; this.addVolume(f,dv+extra,false);
+      }
+      flowAll+=fl;
+    }
+    if(this.order){
+      const g=GLASSES[this.order.glass]; const fm=this.foamMul; const fmax=g.foamMax*fm;
+      this.foam+=g.foamGain*fm*Math.min(1,flowAll)*dt*Math.max(0,1-this.foam/fmax);
+      this.foam-=(1.3*this.foam+0.02)*dt*(1-Math.min(1,flowAll)); this.foam=Math.max(0,this.foam);
+      if(this.level+this.foam>1.012){ this.foam=Math.max(0,1.012-this.level); if(this.mode==='play'&&this.phase==='pour'&&!this.foamSpill){ this.foamSpill=true; this.emit('foamspill'); } if(Math.random()<0.5) this.e.spillFX('#ffffff'); }
+      if(this.spillBig&&Math.random()<0.7) this.e.spillFX(FRUIT[this.segs[this.segs.length-1]?.fruit||'peach'].liquid);
+    }
+    const o=this.order; const mix=o&&o.kind==='mix'?{a:o.A,b:o.B,wa:this.mixShare()??o.ratio}:null;
+    this.e.setLiquid(this.level,this.foam,this.segs,mix); this.e.setPour(this.tilt,this.flow);
+    this.sfx.setLevels(Math.min(1,flowAll),this.level>0.03?Math.min(1,0.25+this.foam*5):0);
+  }
+
+  update(dt){
+    if(this.mode==='demo') this.updateDemo(dt);
+    if(this.mode==='play'){
+      if(!this.lastCall){ this.dayLeft-=dt; if(this.dayLeft<=0){ this.dayLeft=0; this.lastCall=true; this.emit('lastcall'); } }
+      this.phaseT+=dt;
+      if(this.phase==='gap'){ this.phaseT-=2*dt; if(this.phaseT<=0) this.nextOrder(); }
+      else if(this.phase==='enter'){ if(this.phaseT>0.85){ this.phase='pour'; this.phaseT=0; this.emit('say',{text:orderSay(this.order),kind:this.order.special?'gold':''}); } }
+      else if(this.phase==='pour'){
+        this.patience-=dt;
+        if(this.spillBig) this.judge('spill');
+        else if(this.patience<=0){ this.patience=0; this.judge('timeout'); }
+        else if(this.patience/this.order.patienceMax<0.3&&!this.order.warned){ this.order.warned=true; this.emit('say',{text:'まだかなぁ…',kind:''}); }
+      }
+      else if(this.phase==='judge'){ if(this.phaseT>1.5){ this.phase='exit'; this.phaseT=0; this.e.customerExit(); this.e.glassOut(this.lastGrade!=='timeout'); } }
+      else if(this.phase==='exit'){ if(this.phaseT>0.75){ if(this.lastCall) this.endDay(); else this.nextOrder(); } }
+    }
+    this.updatePour(dt);
+  }
+
+  judge(kind){
+    const o=this.order; this.active=null; const nm=f=>FRUIT[f].name;
+    let grade, hint='';
+    if(kind==='timeout') grade='timeout';
+    else if(this.spillBig) grade='spill';
+    else {
+      const tol=this.tolFor(o); let dev=0, worst=null, wd=0;
+      if(o.kind==='mix'){
+        const totalDev=this.level-o.total; const share=this.mixShare()??0; const rDev=(share-o.ratio)*o.total;
+        dev=Math.max(Math.abs(totalDev),Math.abs(rDev));
+        if(Math.abs(totalDev)>=Math.abs(rDev)) hint=`量がちょっと${totalDev>0?'多め':'少なめ'}`; else hint=`${nm(o.A)}がちょっと${rDev>0?'多め':'少なめ'}`;
+      } else {
+        const fr=new Set([...Object.keys(o.req),...Object.keys(this.amt)]);
+        for(const f of fr){ const d=(this.amt[f]||0)-(o.req[f]||0); if(Math.abs(d)>Math.abs(wd)){ wd=d; worst=f; } }
+        dev=Math.abs(wd); if(worst) hint=`${nm(worst)}がちょっと${wd>0?'多め':'少なめ'}`;
+      }
+      grade=dev<=tol?'perfect':dev<=tol*2.5?'good':dev<=tol*5?'close':'miss';
+      if(this.iceCount!==o.ice){ grade=DOWN[grade]; hint=o.ice?`氷は${o.ice}個だよ`:'氷はいらなかったかも'; }
+      if(this.foamSpill){ grade=DOWN[grade]; hint='泡があふれちゃった'; }
+      if(grade==='perfect') hint='';
+      else if(this.lateIce&&grade!=='good'&&this.iceCount===o.ice&&!this.foamSpill) hint='氷は先に入れると安心';
+    }
+    const g=GLASSES[o.glass]; const usedMul=Math.max(1,...Object.keys(o.req).map(f=>FRUIT[f].mul));
+    const base=((o.kind==='mix'?450:[0,300,450,600][o.n])+o.ice*50)*g.mul*usedMul; const gm=GRADE[grade].mul;
+    const good=grade==='perfect'||grade==='good';
+    if(good){ this.combo++; this.maxCombo=Math.max(this.maxCombo,this.combo); } else this.combo=0;
+    let y=base*gm; if(gm>0){ y*=1+0.2*(this.patience/o.patienceMax); if(good) y*=(1+0.05*Math.min(this.combo,10))*this.ctx.perks.tip; y*=this.ctx.perks.sales; }
+    const legendary=o.special&&grade==='perfect';
+    if(legendary) y*=3; else if(o.special&&gm>0) y*=1.5;
+    y=Math.round(y/10)*10; const tip=Math.max(0,y-Math.round(base/10)*10);
+    this.sales+=y; this.tips+=tip; if(grade!=='timeout') this.served++; if(grade==='perfect') this.perfects++; if(legendary) this.legends++;
+    this.lastGrade=grade; this.phase='judge'; this.phaseT=0; this.flow={};
+    if(grade!=='timeout') this.e.glassServe();
+    this.e.customerReact(grade==='perfect'?'happy':grade==='good'||grade==='close'?'ok':'sad');
+    if(grade==='perfect'){ this.e.burst(legendary?'legend':'perfect'); this.e.customerBurst(); }
+    else if(grade==='good') this.e.burst('good');
+    if(legendary) this.sfx.legend(); else if(grade==='perfect') this.sfx.perfect(); else if(grade==='good') this.sfx.good(); else if(grade==='spill') this.sfx.spill(); else this.sfx.bad();
+    if(navigator.vibrate&&grade==='perfect'){ try{ navigator.vibrate(legendary?[30,40,30,40,60]:25); }catch(e){} }
+    const lead=o.kind==='mix'?o.A:(o.layers?o.layers[0].fruit:o.A);
+    this.emit('judge',{grade,yen:y,combo:this.combo,hint,legendary,special:o.special,fruitName:FRUIT[lead].name,species:o.species,glass:o.glass});
+    this.emit('say',{text:legendary?'きらめいてる…！最高よ！':pick(LINES[grade]),kind:legendary?'gold':''});
+  }
+  endDay(){
+    this.mode='dayEnd'; this.order=null; this.active=null;
+    const goal=dayGoal(this.day);
+    const stars=this.sales>=goal*2?3:this.sales>=goal*1.5?2:this.sales>=goal?1:0;
+    this.sfx.fanfare(stars>0);
+    this.emit('dayEnd',{day:this.day,sales:this.sales,goal,stars,passed:stars>0,served:this.served,perfect:this.perfects,maxCombo:this.maxCombo,tips:this.tips,legends:this.legends});
+  }
+}
+
+/* =========================================================
+   UI pieces
+   ========================================================= */
+const S=2.2;
+function FruitIcon({f}){
+  const st='#1B3324';
+  if(f==='peach') return html`<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 9c-8-1-14 6-13 14 1 7 6 12 13 12s12-5 13-12c1-8-5-15-13-14z" fill="#F6A9A3" stroke=${st} strokeWidth=${S}/><path d="M19.5 11c-3 5-3 11 .5 16" fill="none" stroke="#DC5F6B" strokeWidth="2" strokeLinecap="round"/><path d="M20.5 9.5c2-5 8-7 12-5-2 5-7 7-12 5z" fill="#7FA437" stroke=${st} strokeWidth="2" strokeLinejoin="round"/></svg>`;
+  if(f==='pear') return html`<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 8c-3 0-5 3-5 7 0 3-6 6-6 12 0 6 5 10 11 10s11-4 11-10c0-6-6-9-6-12 0-4-2-7-5-7z" fill="#CDE08A" stroke=${st} strokeWidth=${S}/><path d="M20 8l1.5-4.5" stroke="#6B4A2B" strokeWidth="2.6" strokeLinecap="round"/><path d="M21.5 5.5c3-2.5 7-2 8.5 0-3 2.5-6 2.5-8.5 0z" fill="#6F9A2E" stroke=${st} strokeWidth="1.6"/></svg>`;
+  if(f==='mikan') return html`<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="23" rx="14" ry="12" fill="#FFB24F" stroke=${st} strokeWidth=${S}/><circle cx="14" cy="21" r="1" fill="#D5741A"/><circle cx="24" cy="27" r="1" fill="#D5741A"/><circle cx="27" cy="19" r="1" fill="#D5741A"/><circle cx="20" cy="11.5" r="2" fill="#5E8A22"/><path d="M21 11c2-4 7-5 10-3-2 4-7 5-10 3z" fill="#6F9A2E" stroke=${st} strokeWidth="1.6" strokeLinejoin="round"/></svg>`;
+  if(f==='budou') return html`<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="#A87BD3" stroke=${st} strokeWidth="1.8">${[[13,16],[20,15],[27,16],[16.5,22.5],[23.5,22.5],[20,29]].map(([x,y],i)=>html`<circle key=${i} cx=${x} cy=${y} r="4.6"/>`)}</g><path d="M20 10l1-5" stroke="#6B4A2B" strokeWidth="2.4" strokeLinecap="round"/><path d="M21 7c3-3 7-2.5 9 0-3 3-6.5 3-9 0z" fill="#6F9A2E" stroke=${st} strokeWidth="1.5"/></svg>`;
+  return html`<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="19" cy="22" r="11" fill="#BFE6F5" stroke=${st} strokeWidth=${S}/><ellipse cx="15" cy="18" rx="3" ry="1.8" fill="#fff" transform="rotate(-35 15 18)"/><circle cx="32" cy="12" r="2.6" fill="none" stroke="#2C8FC0" strokeWidth="1.6"/><circle cx="34" cy="20" r="1.6" fill="none" stroke="#2C8FC0" strokeWidth="1.4"/><circle cx="7" cy="9" r="2" fill="none" stroke="#2C8FC0" strokeWidth="1.4"/></svg>`;
+}
+const IceIcon=()=>html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8l7-3 7 3v8l-7 3-7-3z" fill="#EAF8FF" stroke="#1B3324" strokeWidth="1.8" strokeLinejoin="round"/><path d="M5 8l7 3 7-3M12 11v8" fill="none" stroke="#1B3324" strokeWidth="1.5" strokeLinejoin="round"/><path d="M8 9.2l2 .9" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/></svg>`;
+const PauseIcon=html`<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor"/></svg>`;
+const GearIcon=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.4 4.6l1.6 1.2-1.8 3.2-1.9-.7c-.5.4-1.1.8-1.7 1l-.3 2h-3.6l-.3-2c-.6-.2-1.2-.6-1.7-1l-1.9.7L5 14.3l1.6-1.2a6 6 0 0 1 0-2.2L5 9.7l1.8-3.2 1.9.7c.5-.4 1.1-.8 1.7-1l.3-2h3.6l.3 2c.6.2 1.2.6 1.7 1l1.9-.7 1.8 3.2-1.6 1.2a6 6 0 0 1 0 2.2z" fill="currentColor"/></svg>`;
+function DecorIcon({k}){
+  const st='#1B3324';
+  if(k==='plant') return html`<svg viewBox="0 0 44 44" aria-hidden="true"><path d="M14 28h16l-2 11H16z" fill="#C8754A" stroke=${st} strokeWidth="2" strokeLinejoin="round"/><path d="M22 28c-1-8-6-12-11-13 1 6 5 11 11 13zM22 28c1-9 5-15 11-16-1 7-5 13-11 16zM22 28c0-8 0-14 0-20" fill="#7FA437" stroke=${st} strokeWidth="2" strokeLinejoin="round"/></svg>`;
+  if(k==='lamp') return html`<svg viewBox="0 0 44 44" aria-hidden="true"><path d="M22 2v12" stroke=${st} strokeWidth="2"/><path d="M12 26c0-7 4-12 10-12s10 5 10 12z" fill="#F2C14E" stroke=${st} strokeWidth="2" strokeLinejoin="round"/><circle cx="22" cy="28" r="3.5" fill="#FFF2C8" stroke=${st} strokeWidth="1.5"/><path d="M14 34l-3 4M22 35v5M30 34l3 4" stroke="#D9B24C" strokeWidth="2" strokeLinecap="round"/></svg>`;
+  if(k==='record') return html`<svg viewBox="0 0 44 44" aria-hidden="true"><rect x="5" y="26" width="34" height="11" rx="2" fill="#8A5632" stroke=${st} strokeWidth="2"/><ellipse cx="19" cy="25" rx="12" ry="4.5" fill="#1D1D22" stroke=${st} strokeWidth="1.5"/><ellipse cx="19" cy="25" rx="3.5" ry="1.4" fill="#CF3B35"/><path d="M30 24l4-14M34 10c-6 0-10-3-11-7 6-1 11 2 11 7z" fill="#D9B24C" stroke=${st} strokeWidth="1.8" strokeLinejoin="round"/></svg>`;
+  if(k==='stained') return html`<svg viewBox="0 0 44 44" aria-hidden="true"><path d="M9 40V20a13 13 0 0 1 26 0v20z" fill="#FBF5E8" stroke=${st} strokeWidth="2"/><path d="M12 38V22h9v16zM23 38V22h9v16z" fill="#F4A7A2"/><path d="M12 30h9v8h-9zM23 22h9v8h-9z" fill="#BFD674"/><path d="M12 20a10 10 0 0 1 20 0z" fill="#F7C95F"/><path d="M12 20h20M22 10v28M12 30h20" stroke=${st} strokeWidth="1.6"/></svg>`;
+  return html`<svg viewBox="0 0 44 44" aria-hidden="true"><rect x="4" y="9" width="36" height="26" rx="8" fill="#163824" stroke="#9BE3B5" strokeWidth="2"/><text x="22" y="28" textAnchor="middle" fontSize="15" fontWeight="900" fill="#FFB3CC" stroke="#FF5C93" strokeWidth=".6">喫茶</text></svg>`;
+}
+
+function glassPathD(def,inner,sx,sy,ox,oy){
+  const N=24, pts=[];
+  const X=x=>ox+x*sx, Y=y=>oy-y*sy;
+  if(inner){ for(let i=0;i<=N;i++){ const y=i/N; pts.push([X(-def.r(y)),Y(def.baseY+y*def.H)]); } for(let i=N;i>=0;i--){ const y=i/N; pts.push([X(def.r(y)),Y(def.baseY+y*def.H)]); } }
+  else { const w=def.wall; const R=y=>def.r(y)+w;
+    if(def.stem){ const s=def.stem; pts.push([X(-s.foot),Y(0)],[X(-s.foot),Y(0.03)],[X(-s.r),Y(0.18)],[X(-s.r),Y(def.baseY-0.1)]); }
+    else pts.push([X(-R(0)),Y(0)]);
+    for(let i=0;i<=N;i++){ const y=i/N; pts.push([X(-R(y)),Y(def.baseY+y*def.H)]); }
+    for(let i=N;i>=0;i--){ const y=i/N; pts.push([X(R(y)),Y(def.baseY+y*def.H)]); }
+    if(def.stem){ const s=def.stem; pts.push([X(s.r),Y(def.baseY-0.1)],[X(s.r),Y(0.18)],[X(s.foot),Y(0.03)],[X(s.foot),Y(0)]); }
+    else pts.push([X(R(0)),Y(0)]);
+  }
+  return 'M'+pts.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join('L')+'Z';
+}
+function MiniGlass({o,w=38,h=56,uid}){
+  const def=GLASSES[o.glass]; const top=def.baseY+def.H+0.05; const maxR=Math.max(...[0,.25,.5,.75,1].map(y=>def.r(y)+def.wall),def.stem?def.stem.foot:0,def.handle?0.85:0);
+  const s=Math.min((h-4)/top,(w-4)/(2*maxR)); const ox=w/2-(def.handle?4:0), oy=h-2;
+  const inner=glassPathD(def,true,s,s,ox,oy), outer=glassPathD(def,false,s,s,ox,oy);
+  const cid='mg'+uid; let prev=0; const Y=v=>oy-(def.baseY+v*def.H)*s;
+  const mixCol=o.kind==='mix'?new THREE.Color(FRUIT[o.A].liquid).lerp(new THREE.Color(FRUIT[o.B].liquid),1-o.ratio).getStyle():null;
+  return html`<svg className="mini" viewBox=${`0 0 ${w} ${h}`} width=${w} height=${h} aria-hidden="true">
+    <defs><clipPath id=${cid}><path d=${inner}/></clipPath></defs>
+    <path d=${outer} fill="#EEF5EF" stroke="#1B3324" strokeWidth="1.6" strokeLinejoin="round"/>
+    <g clipPath=${`url(#${cid})`}>
+      ${o.kind==='mix'?html`<rect x="0" y=${Y(o.total)} width=${w} height=${Math.max(0,Y(0)-Y(o.total))} fill=${mixCol}/>`:o.layers.map((L,i)=>{ const y0=Y(prev), y1=Y(L.top); prev=L.top; return html`<rect key=${i} x="0" y=${y1} width=${w} height=${Math.max(0,y0-y1)} fill=${FRUIT[L.fruit].liquid}/>`; })}
+      ${o.lines.map((L,i)=>html`<line key=${'l'+i} x1="0" x2=${w} y1=${Y(L.top)} y2=${Y(L.top)} stroke=${L.color} strokeWidth="1.8" strokeDasharray="3 2"/>`)}
+      ${Array.from({length:o.ice}).map((_,i)=>html`<rect key=${'i'+i} x=${w/2-7+i*5} y=${Y(o.total)-3+(i%2)*3} width="6" height="6" rx="1" fill="#F2FBFF" stroke="#2E6E8A" strokeWidth="1"/>`)}
+    </g>
+    <path d=${inner} fill="none" stroke="#1B3324" strokeWidth="1" opacity=".5"/>
+  </svg>`;
+}
+function GlassIcon({k,locked}){
+  const def=GLASSES[k]; const w=52,h=52; const top=def.baseY+def.H+0.05; const maxR=Math.max(def.r(1)+def.wall,def.r(0.5)+def.wall,def.stem?def.stem.foot:0,def.handle?0.85:0);
+  const s=Math.min((h-4)/top,(w-6)/(2*maxR)); const ox=w/2-(def.handle?4:0), oy=h-2;
+  return html`<svg viewBox="0 0 52 52" aria-hidden="true"><path d=${glassPathD(def,false,s,s,ox,oy)} fill=${locked?'#D8D2C3':'#EEF5EF'} stroke="#1B3324" strokeWidth="1.5" strokeLinejoin="round"/>
+    ${!locked&&html`<path d=${glassPathD({...def,H:def.H*0.7},true,s,s,ox,oy)} fill="#F7B6AE" opacity=".9"/>`}</svg>`;
+}
+function Face({k,special,locked}){
+  const sp=SPECIES[k]; const fill=locked?'#CFC8B8':sp.face; const st='#1B3324'; const acc=locked?'#CFC8B8':sp.accent;
+  const ears={
+    long:html`<g><ellipse cx="22" cy="14" rx="5.5" ry="13" fill=${fill} stroke=${st} strokeWidth="2"/><ellipse cx="38" cy="14" rx="5.5" ry="13" fill=${fill} stroke=${st} strokeWidth="2"/>${!locked&&html`<ellipse cx="22" cy="15" rx="2.5" ry="9" fill=${acc}/><ellipse cx="38" cy="15" rx="2.5" ry="9" fill=${acc}/>`}</g>`,
+    round:html`<g><circle cx="15" cy="20" r="7" fill=${fill} stroke=${st} strokeWidth="2"/><circle cx="45" cy="20" r="7" fill=${fill} stroke=${st} strokeWidth="2"/></g>`,
+    tri:html`<g><path d="M12 28L15 10 26 20z" fill=${fill} stroke=${st} strokeWidth="2" strokeLinejoin="round"/><path d="M48 28L45 10 34 20z" fill=${fill} stroke=${st} strokeWidth="2" strokeLinejoin="round"/></g>`,
+    tall:html`<g><path d="M12 28L13 6 27 20z" fill=${fill} stroke=${st} strokeWidth="2" strokeLinejoin="round"/><path d="M48 28L47 6 33 20z" fill=${fill} stroke=${st} strokeWidth="2" strokeLinejoin="round"/></g>`,
+    side:html`<g><ellipse cx="9" cy="33" rx="7" ry="3.5" fill=${fill} stroke=${st} strokeWidth="2"/><ellipse cx="51" cy="33" rx="7" ry="3.5" fill=${fill} stroke=${st} strokeWidth="2"/></g>`,
+    none:null,
+  }[sp.ears];
+  return html`<svg viewBox="0 0 60 60" aria-hidden="true">${ears}
+    ${sp.wool&&html`<g fill=${locked?'#DDD6C7':'#FFFBF2'} stroke=${st} strokeWidth="2">${[[18,20],[30,15],[42,20],[13,30],[47,30]].map(([x,y],i)=>html`<circle key=${i} cx=${x} cy=${y} r="8"/>`)}</g>`}
+    <circle cx="30" cy="35" r="19" fill=${fill} stroke=${st} strokeWidth="2.2"/>
+    ${sp.beak&&!locked&&html`<ellipse cx="30" cy="37" rx="14" ry="12" fill="#fff"/>`}
+    ${!locked&&html`<g><ellipse cx="23" cy="33" rx="2.4" ry="3" fill=${st}/><ellipse cx="37" cy="33" rx="2.4" ry="3" fill=${st}/><circle cx="23.8" cy="32" r=".9" fill="#fff"/><circle cx="37.8" cy="32" r=".9" fill="#fff"/>
+      <ellipse cx="18" cy="40" rx="3.6" ry="2.2" fill="#F49A98" opacity=".85"/><ellipse cx="42" cy="40" rx="3.6" ry="2.2" fill="#F49A98" opacity=".85"/>
+      ${sp.muzzle?html`<ellipse cx="30" cy="41" rx="6" ry="4" fill=${sp.accent}/>`:null}
+      ${sp.beak?html`<path d="M26 38h8l-4 5z" fill="#F2A23A" stroke=${st} strokeWidth="1.2" strokeLinejoin="round"/>`:html`<ellipse cx="30" cy="39" rx="1.8" ry="1.3" fill=${st}/>`}</g>`}
+    ${locked&&html`<text x="30" y="41" textAnchor="middle" fontSize="16" fontWeight="900" fill="#8C8577">?</text>`}
+    ${special&&html`<path d="M21 17l3-7 4 5 2-6 2 6 4-5 3 7z" fill="#E3BC4E" stroke=${st} strokeWidth="1.6" strokeLinejoin="round"/>`}
+  </svg>`;
+}
+
+function OrderCard({o,patience,tip}){
+  const low=patience<0.3; const nm=f=>html`<span style=${{color:FRUIT[f].ui}}>${FRUIT[f].name}</span>`;
+  let req;
+  if(o.kind==='mix'){ const a=Math.round(o.ratio*10); req=html`${nm(o.A)}${a}：${nm(o.B)}${10-a}`; }
+  else req=html`${o.layers.map((L,i)=>html`<span key=${i}>${i>0?' → ':''}${nm(L.fruit)}</span>`)}${o.n===1?'ソーダ':''}`;
+  return html`<div className=${'order'+(o.special?' gold':'')} key=${o.id}>
+    <${MiniGlass} o=${o} uid=${String(o.id).slice(2,8)}/>
+    <div className="txt">
+      <div className="who">${o.special&&html`<span className="star">★ きらめき</span>`}<span>${SPECIES[o.species].name}</span></div>
+      <div className="req">${req}</div>
+      <div className="gname"><span>${GLASSES[o.glass].name}・${o.kind==='mix'?'ミックス':o.n===1?'一層':o.n===2?'二層':'三層'}</span>${o.ice>0&&html`<span className="icechip"><${IceIcon}/>氷×${o.ice}</span>`}</div>
+      <div className=${'patience'+(low?' low':'')}><i style=${{width:(patience*100).toFixed(1)+'%'}}></i></div>
+      ${tip&&html`<div className="tip">${tip}</div>`}
+    </div>
+  </div>`;
+}
+function MixMeter({o,share,tol}){
+  const zone=Math.min(0.45,tol*1.6/Math.max(0.2,o.total));
+  const x=v=>(1-v)*100;
+  const ok=share!=null&&Math.abs(share-o.ratio)<=zone;
+  const a=Math.round(o.ratio*10);
+  return html`<div className="mixm" style=${{'--ca':FRUIT[o.A].liquid,'--cb':FRUIT[o.B].liquid}}>
+    <span style=${{color:FRUIT[o.A].ui}}>${FRUIT[o.A].name}</span>
+    <div className="bar" role="meter" aria-label="ミックスの割合" aria-valuenow=${share==null?0:Math.round(share*100)} aria-valuemin="0" aria-valuemax="100">
+      <i className="zone" style=${{left:x(o.ratio+zone)+'%',width:(zone*200)+'%'}}></i>
+      ${share!=null&&html`<i className=${'needle'+(ok?' ok':'')} style=${{left:x(share)+'%'}}></i>`}
+    </div>
+    <span style=${{color:FRUIT[o.B].ui}}>${FRUIT[o.B].name}</span>
+    <div className="cap">目標 ${a}：${10-a}　いま ${share==null?'—':`${Math.round(share*10)}：${10-Math.round(share*10)}`}</div>
+  </div>`;
+}
+function PourBtn({fruit,active,hint,onDown,onUp}){
+  const F=FRUIT[fruit];
+  return html`<button className=${`pour${active?' active':''}${hint&&!active?' hint':''}`} style=${{'--b0':F.btn[0],'--b1':F.btn[1]}} aria-label=${F.name+'を注ぐ（長押し）'}
+    onPointerDown=${onDown} onPointerUp=${onUp} onPointerCancel=${onUp} onLostPointerCapture=${onUp} onContextMenu=${e=>e.preventDefault()}>
+    <${FruitIcon} f=${fruit}/><span>${F.name}</span><small>長押しで注ぐ</small></button>`;
+}
+function JudgePop({j}){
+  const G=GRADE[j.grade];
+  return html`<div className="judge" style=${{'--gc':G.color}}>
+    <div className="g">${G.label}</div>
+    <div className=${'yen'+(j.yen?'':' zero')}>+${yen(j.yen)}</div>
+    ${j.combo>=2&&html`<span className="combo">${j.grade==='perfect'?'ぴったり':'コンボ'} ×${j.combo}</span>`}
+    ${j.hint&&html`<span className="hint">${j.hint}</span>`}
+  </div>`;
+}
+function Switch({id,on,onChange,disabled,label}){
+  return html`<button id=${id} className="sw" role="switch" aria-checked=${on?'true':'false'} aria-label=${label} disabled=${disabled} onClick=${()=>onChange(!on)}></button>`;
+}
+
+function Shop({save,onBuy,onClose}){
+  // 値段を押すと確認画面を出す（alert/confirm は使えないので、ページ内に重ねる）
+  const [confirm,setConfirm]=useState(null);
+  const row=(key,icon,name,perk,price)=>{ const owned=!!save.owned[key]; const can=save.wallet>=price;
+    return html`<div className="item" key=${key}>${icon}<div><div className="nm">${name}</div><div className="pk">${perk}</div></div>
+      ${owned?html`<button className="buy owned" disabled>購入済み</button>`
+        :html`<button className="buy" disabled=${!can} onClick=${()=>setConfirm({key,icon,name,perk,price})}>${yen(price)}</button>`}</div>`; };
+  const c=confirm;
+  return html`<div className="sheet" onClick=${e=>{ if(e.target===e.currentTarget) onClose(); }}><div className="card wide">
+    <h2>お店</h2>
+    <div className="shopwallet"><span>お店の資金</span><b>${yen(save.wallet)}</b></div>
+    <p className="note">1日の売上がそのまま資金になります。値段をタップすると、確認してから購入できます。</p>
+    <h3>改装 <small>見た目が変わって、お店も少しパワーアップ</small></h3>
+    ${DECOR_KEYS.map(k=>row(k,html`<${DecorIcon} k=${k}/>`,DECOR[k].name,DECOR[k].perk,DECOR[k].price))}
+    <h3>新メニュー <small>カウンターに並ぶ果汁が増える</small></h3>
+    ${EXTRA_FRUITS.map(f=>row(f,html`<${FruitIcon} f=${f}/>`,FRUIT[f].name+'ソーダ',FRUIT[f].desc,FRUIT[f].price))}
+    <button className="cta" style=${{marginTop:'14px'}} onClick=${onClose}>とじる</button>
+  </div>
+  ${c&&html`<div className="sheet buy-confirm" role="dialog" aria-modal="true" aria-labelledby="buy-q" onClick=${e=>{ if(e.target===e.currentTarget) setConfirm(null); }}><div className="card">
+    ${c.icon}
+    <h2 id="buy-q">購入しますか？</h2>
+    <div className="nm">${c.name}</div>
+    <p className="pk">${c.perk}</p>
+    <dl>
+      <div><dt>値段</dt><dd className="price">${yen(c.price)}</dd></div>
+      <div><dt>いまの資金</dt><dd>${yen(save.wallet)}</dd></div>
+      <div><dt>購入後の資金</dt><dd>${yen(save.wallet-c.price)}</dd></div>
+    </dl>
+    <button className="cta" onClick=${()=>{ onBuy(c.key,c.price); setConfirm(null); }}>購入する</button>
+    <button className="link" onClick=${()=>setConfirm(null)}>やめる</button>
+  </div></div>`}
+  </div>`;
+}
+
+function Transfer({save,onLoad}){
+  const [mode,setMode]=useState(null);
+  const [code,setCode]=useState('');
+  const [input,setInput]=useState('');
+  const [msg,setMsg]=useState('');
+  const [arm,setArm]=useState(false);
+  const copy=async()=>{ try{ await navigator.clipboard.writeText(code); setMsg('コピーしました。メモなどに貼り付けて取っておいてね'); }catch(e){ setMsg('コードを長押しして全部選び、コピーしてください'); } };
+  const load=()=>{
+    const s=codeToSave(input);
+    if(!s){ setArm(false); setMsg('コードが正しくありません。最後まで貼り付けたか確かめてください'); return; }
+    if(!arm){ setArm(true); setMsg(`${s.unlocked}日目まで・資金 ${yen(s.wallet)} のデータです。もう一度押すと、今のデータを上書きします`); return; }
+    onLoad(s); setArm(false); setInput(''); setMsg('読み込みました');
+  };
+  return html`<div className="transfer">
+    <h3>引き継ぎコード</h3>
+    <p className="note" style=${{textAlign:'left',margin:'0 0 8px'}}>機種変更のときや、ホーム画面版と claude.ai 版のあいだで続きを移すときに使います。</p>
+    <div className="row2">
+      <button className="ghost" onClick=${()=>{ setCode(saveToCode(save)); setMode('out'); setMsg(''); }}>コードを出す</button>
+      <button className="ghost" onClick=${()=>{ setMode('in'); setArm(false); setMsg(''); }}>コードを入れる</button>
+    </div>
+    ${mode==='out'&&html`<textarea readOnly rows="3" value=${code} onFocus=${e=>e.target.select()} aria-label="引き継ぎコード"></textarea><button className="small" onClick=${copy}>コピー</button>`}
+    ${mode==='in'&&html`<textarea rows="3" value=${input} onInput=${e=>{ setInput(e.target.value); setArm(false); }} placeholder="SHUWA1- から始まるコードを貼り付け" aria-label="引き継ぎコードを入力"></textarea><button className=${'small'+(arm?' confirm':'')} onClick=${load}>${arm?'上書きする':'読み込む'}</button>`}
+    ${msg&&html`<p className="note" style=${{textAlign:'left'}}>${msg}</p>`}
+  </div>`;
+}
+
+function Ranking({save,cloud,onNick,onClose}){
+  const [rows,setRows]=useState(null);
+  const [nick,setNick]=useState(save.nick||'');
+  const [err,setErr]=useState('');
+  useEffect(()=>{
+    if(!Cloud.db) return;
+    let un=()=>{};
+    try{ un=Cloud.db.collection('scores').orderBy('best','desc').limit(30).onSnapshot(s=>setRows(s.docs.map(d=>({id:d.id,...d.data()}))),e=>setErr('ランキングを読み込めませんでした')); }catch(e){ setErr('ランキングを読み込めませんでした'); }
+    return ()=>un();
+  },[cloud.status]);
+  const off=cloud.status!=='ready';
+  const canPost=!off&&!!Cloud.uid&&cloud.canWrite!==false;
+  return html`<div className="sheet" onClick=${e=>{ if(e.target===e.currentTarget) onClose(); }}><div className="card wide">
+    <h2>みんなのランキング</h2>
+    <p className="note" style=${{marginTop:0}}>1日の最高売上でならびます。</p>
+    ${off?html`<p className="note">ランキングは claude.ai で開いたときに使えます。</p>`:html`
+      ${canPost?html`<div>
+        <label htmlFor="nick" style=${{fontSize:'12px',fontWeight:900}}>ニックネーム（12文字まで）</label>
+        <div className="nickrow"><input id="nick" maxLength="12" value=${nick} onInput=${e=>setNick(e.target.value)} placeholder="例：しん店長"/><button onClick=${()=>{ const n=nick.trim().slice(0,12); if(n) onNick(n); }}>${save.nick?'変更':'参加する'}</button></div>
+        ${!save.nick&&html`<p className="note" style=${{margin:'2px 0 8px',textAlign:'left'}}>名前を決めると、閉店のたびに記録が自動で登録されます。</p>`}
+      </div>`:html`<p className="note">この開き方では見るだけです。記録を登録するには、持ち主から編集者として招待してもらってください。</p>`}
+      ${err?html`<p className="note">${err}</p>`:rows==null?html`<p className="note">読み込み中…</p>`:rows.length===0?html`<p className="note">まだ誰も登録していません。1日遊んで、最初の記録を残そう。</p>`:html`
+        <ol className="rank">${rows.map((r,i)=>html`<li key=${r.id} className=${r.id===Cloud.uid?'me':''}>
+          <span className=${'no'+(i<3?' top':'')}>${i+1}</span>
+          <span className="nm">${String(r.nick||'名無しの店長').slice(0,12)}${r.id===Cloud.uid?'（あなた）':''}<span className="sub">${Number(r.bestDay)||0}日目まで・累計 ${yen(Number(r.total)||0)}</span></span>
+          <span className="sc">${yen(Number(r.best)||0)}</span></li>`)}</ol>`}
+    `}
+    <button className="cta" style=${{marginTop:'14px'}} onClick=${onClose}>とじる</button>
+  </div></div>`;
+}
+
+/* =========================================================
+   App
+   ========================================================= */
+function App(){
+  const canvasRef=useRef(null), bubbleRef=useRef(null), judgeRef=useRef(null), labelRefs=useRef([]);
+  const R=useRef({});
+  const [save,setSave]=useState(loadLocal);
+  const saveRef=useRef(save); saveRef.current=save;
+  const [screen,setScreen]=useState('title');
+  const [day,setDay]=useState(()=>loadLocal().unlocked);
+  const [hud,setHud]=useState({time:1,left:DAY_LEN,sales:0,patience:1,next:null,canServe:false,tip:'',share:null,ice:0,needIce:false});
+  const [order,setOrder]=useState(null);
+  const [bubble,setBubble]=useState(null);
+  const [judge,setJudge]=useState(null);
+  const [legend,setLegend]=useState(null);
+  const [banner,setBanner]=useState(null);
+  const [result,setResult]=useState(null);
+  const [modal,setModal]=useState(null);
+  const [held,setHeld]=useState(null);
+  const [cloud,setCloud]=useState({status:'loading',canWrite:null});
+  const [rankNote,setRankNote]=useState('');
+  const handlers=useRef(()=>{});
+
+  const update=(fn,{cloudSave=false}={})=>{ setSave(s=>{ const n=normSave(fn(s)); n.updatedAt=Date.now(); writeLocal(n); if(cloudSave) Cloud.saveProgress(n); return n; }); };
+
+  handlers.current=(type,p)=>{
+    if(type==='order'){ setOrder(p); setJudge(null); }
+    else if(type==='say'){ setBubble({...p,id:Math.random()}); }
+    else if(type==='judge'){ setJudge({...p,id:Math.random()}); setHeld(null);
+      if(p.legendary) setLegend({name:`きらめき${p.fruitName}ソーダ`,id:Math.random()});
+      update(s=>{ const n={...s,species:{...s.species},glasses:{...s.glasses}}; if(p.grade!=='timeout'){ n.species[p.species]=(n.species[p.species]||0)+1; n.glasses[p.glass]=(n.glasses[p.glass]||0)+1; } if(p.legendary) n.legend=(n.legend||0)+1; return n; }); }
+    else if(type==='lastcall'){ setBanner({text:'ラストオーダー！',id:Math.random()}); }
+    else if(type==='foamspill'){ setBanner({text:'泡があふれた！',id:Math.random(),small:true}); }
+    else if(type==='dayEnd'){
+      setOrder(null); setBubble(null);
+      const prevBest=Math.max(0,...Object.values(saveRef.current.best||{}).map(Number));
+      update(s=>{ const n={...s,best:{...s.best},stars:{...s.stars}}; n.best[p.day]=Math.max(n.best[p.day]||0,p.sales); n.stars[p.day]=Math.max(n.stars[p.day]||0,p.stars); if(p.passed) n.unlocked=Math.max(n.unlocked,p.day+1); n.wallet=(n.wallet||0)+p.sales; n.total=(n.total||0)+p.sales; return n; },{cloudSave:true});
+      setResult({...p,newBest:p.sales>prevBest&&p.sales>0}); setScreen('result'); setRankNote('');
+      setTimeout(()=>{ const s=saveRef.current; if(s.nick&&Cloud.status==='ready'){ Cloud.submitScore(s).then(ok=>setRankNote(ok?'ランキングに記録しました':'')); } },300);
+    }
+  };
+
+  useEffect(()=>{ if(!bubble) return; const id=setTimeout(()=>setBubble(b=>b&&b.id===bubble.id?null:b),2600); return ()=>clearTimeout(id); },[bubble]);
+  useEffect(()=>{ if(!judge) return; const id=setTimeout(()=>setJudge(j=>j&&j.id===judge.id?null:j),1700); return ()=>clearTimeout(id); },[judge]);
+  useEffect(()=>{ if(!legend) return; const id=setTimeout(()=>setLegend(null),2700); return ()=>clearTimeout(id); },[legend]);
+  useEffect(()=>{ if(!banner) return; const id=setTimeout(()=>setBanner(null),banner.small?1000:1600); return ()=>clearTimeout(id); },[banner]);
+
+  // keep the scene and game in step with purchases and options
+  useEffect(()=>{ const g=R.current; if(!g.engine) return; g.engine.setShop(save.owned); g.game.setContext({opts:save.opts,owned:save.owned}); g.sfx.setMuted(save.muted); g.sfx.setBgm(!!save.owned.record&&save.bgm); },[save.owned,save.opts,save.muted,save.bgm]);
+
+  useEffect(()=>{
+    const engine=new Engine(canvasRef.current); const sfx=new Sfx(); const s0=saveRef.current; sfx.setMuted(s0.muted);
+    const game=new Game(engine,sfx,(t,p)=>handlers.current(t,p));
+    engine.anchors={bubble:bubbleRef.current,judge:judgeRef.current,labels:labelRefs.current};
+    R.current={engine,game,sfx};
+    engine.setShop(s0.owned); game.setContext({opts:s0.opts,owned:s0.owned}); sfx.setBgm(!!s0.owned.record&&s0.bgm);
+    const host=canvasRef.current.parentElement;
+    const doResize=()=>{ const r=host.getBoundingClientRect(); engine.resize(Math.max(1,r.width),Math.max(1,r.height)); };
+    doResize(); const ro=new ResizeObserver(doResize); ro.observe(host);
+    game.startDemo();
+    let last=performance.now(), raf=0, acc=0;
+    const poll=()=>{ const g=game; const play=g.mode==='play'; const n={time:play?g.dayLeft/DAY_LEN:1,left:play?Math.ceil(g.dayLeft):DAY_LEN,sales:g.sales||0,patience:g.order&&play?clamp(g.patience/g.order.patienceMax,0,1):1,next:g.phase==='pour'?g.nextFruit():null,canServe:g.canServe(),tip:g.tutorialTip(),share:play?g.mixShare():null,ice:g.iceCount||0,needIce:g.phase==='pour'&&g.needIce(),canIce:g.canIce()};
+      if(n.share!=null) n.share=Math.round(n.share*200)/200;
+      setHud(h=>{ for(const k in n) if(h[k]!==n[k]) return n; return h; });
+      const st=host.getBoundingClientRect(), top=play&&document.querySelector('.hud-top'), bot=play&&document.querySelector('.hud-bottom');
+      engine.setInsets(top?Math.max(0,top.getBoundingClientRect().bottom-st.top):0, bot?Math.max(0,st.bottom-bot.getBoundingClientRect().top):0); };
+    const loop=(now)=>{ const dt=Math.min(0.05,(now-last)/1000); last=now; if(!game.paused) game.update(dt); engine.update(game.paused?0:dt); engine.render(); acc+=dt; if(acc>0.08){ acc=0; poll(); } raf=requestAnimationFrame(loop); };
+    raf=requestAnimationFrame(loop);
+    const fontsP=document.fonts&&document.fonts.load?Promise.all([document.fonts.load('700 86px "Kaisei Decol"'),document.fonts.load('italic 34px "DM Serif Display"')]):Promise.resolve();
+    fontsP.then(()=>engine.refreshLabels()).catch(()=>{});
+    const vis=()=>{ if(document.hidden&&game.mode==='play'&&!game.paused){ game.paused=true; game.active=null; setModal('pause'); } };
+    document.addEventListener('visibilitychange',vis);
+    const keyFruit=code=>{ const c=counterOf(saveRef.current.owned); if(code==='ArrowLeft'||code==='KeyA') return c[0]; if(code==='ArrowRight'||code==='KeyD') return c[c.length-1]; const m=/^Digit([1-5])$/.exec(code); return m?c[Number(m[1])-1]||null:null; };
+    const kd=e=>{ if(e.target&&e.target.tagName==='INPUT') return; if(e.repeat) return; const f=keyFruit(e.code); if(f){ sfx.init(); game.press(f); setHeld(game.active); e.preventDefault(); } else if(e.code==='Space'||e.code==='Enter'){ if(game.mode==='play'){ game.serve(); e.preventDefault(); } } else if(e.code==='KeyI'||e.code==='KeyS'){ if(game.mode==='play'&&saveRef.current.opts.ice) game.addIce(); } };
+    const ku=e=>{ const f=keyFruit(e.code); if(f){ game.release(f); setHeld(game.active); } };
+    window.addEventListener('keydown',kd); window.addEventListener('keyup',ku);
+    // account features: ranking + progress that follows the viewer
+    const offCloud=Cloud.on(()=>setCloud({status:Cloud.status,canWrite:Cloud.canWrite}));
+    Cloud.init().then(async()=>{ const remote=await Cloud.loadSave(); if(remote&&(remote.updatedAt||0)>(saveRef.current.updatedAt||0)){ const n=normSave(remote); writeLocal(n); setSave(n); setDay(n.unlocked); } });
+    return ()=>{ cancelAnimationFrame(raf); ro.disconnect(); offCloud(); document.removeEventListener('visibilitychange',vis); window.removeEventListener('keydown',kd); window.removeEventListener('keyup',ku); engine.renderer.dispose(); };
+  },[]);
+
+  const G=()=>R.current;
+  const down=f=>e=>{ e.preventDefault(); try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){} G().sfx.init(); G().game.press(f); setHeld(G().game.active); };
+  const up=f=>()=>{ G().game.release(f); setHeld(G().game.active); };
+  const goIntro=d=>{ G().sfx.init(); G().sfx.tap(); setDay(d); setResult(null); setModal(null); setScreen('intro'); };
+  const begin=()=>{ G().sfx.tap(); setJudge(null); setBubble(null); setOrder(null); G().game.startDay(day); setScreen('play'); };
+  const toTitle=()=>{ setModal(null); setResult(null); setOrder(null); setBubble(null); setJudge(null); const g=G().game; g.paused=false; g.startDemo(); setScreen('title'); };
+  const pause=()=>{ const g=G().game; g.paused=true; g.active=null; setHeld(null); setModal('pause'); };
+  const resume=()=>{ G().game.paused=false; setModal(null); };
+  const open=m=>{ G().sfx.init(); setModal(m); };
+  const buy=(key,price)=>{ if(save.wallet<price||save.owned[key]) return; G().sfx.coin(); update(s=>({...s,wallet:s.wallet-price,owned:{...s.owned,[key]:true}}),{cloudSave:true}); };
+  const setNick=n=>{ update(s=>({...s,nick:n}),{cloudSave:true}); setTimeout(()=>Cloud.submitScore(saveRef.current),200); };
+  const setOpt=(k,v)=>update(s=>({...s,opts:{...s.opts,[k]:v}}),{cloudSave:true});
+  const loadCode=s=>{ update(()=>s,{cloudSave:true}); setDay(s.unlocked); };
+
+  const goal=dayGoal(day);
+  const bestDay=Math.max(0,...Object.keys(save.best).map(Number));
+  const counter=counterOf(save.owned); const multi=counter.length>2;
+  const iceOn=!!save.opts.ice;
+
+  const Settings=()=>html`<div className="sheet" onClick=${e=>{ if(e.target===e.currentTarget) setModal(screen==='play'?'pause':null); }}><div className="card wide">
+    <h2>設定</h2>
+    <div className="toggle"><div className="t"><b>氷入りの注文</b><span>「氷×2」のような注文が来る。氷を入れると水位が上がるので、入れる順番がカギ。</span></div><${Switch} id="opt-ice" label="氷入りの注文" on=${save.opts.ice} onChange=${v=>setOpt('ice',v)}/></div>
+    <div className="toggle"><div className="t"><b>ミックス注文</b><span>「白桃7：洋梨3」のように混ぜる注文が来る。メーターを見ながら2種類を注ぎ分ける。</span></div><${Switch} id="opt-mix" label="ミックス注文" on=${save.opts.mix} onChange=${v=>setOpt('mix',v)}/></div>
+    <div className="toggle"><div className="t"><b>効果音</b><span>注ぐ音や判定の音</span></div><${Switch} id="opt-sound" label="効果音" on=${!save.muted} onChange=${v=>update(s=>({...s,muted:!v}))}/></div>
+    <div className="toggle"><div className="t"><b>BGM</b><span>${save.owned.record?'レコードプレーヤーの音楽':'お店で「レコードプレーヤー」を買うと流れる'}</span></div><${Switch} id="opt-bgm" label="BGM" disabled=${!save.owned.record} on=${!!save.owned.record&&save.bgm} onChange=${v=>update(s=>({...s,bgm:v}))}/></div>
+    ${screen==='play'&&html`<p className="note">氷・ミックスの設定は、次のお客さんから反映されます。</p>`}
+    ${screen!=='play'&&html`<${Transfer} save=${save} onLoad=${loadCode}/>`}
+    <button className="cta" style=${{marginTop:'14px'}} onClick=${()=>setModal(screen==='play'?'pause':null)}>とじる</button>
+  </div></div>`;
+
+  return html`<div className="stage">
+    <canvas ref=${canvasRef} className="gl" aria-label="喫茶店のカウンターとグラス"></canvas>
+    <div className="anchors">
+      <div className="anchor" ref=${bubbleRef}>${bubble&&screen==='play'&&html`<div key=${bubble.id} className=${'bubble '+(bubble.kind||'')}>${bubble.text}</div>`}</div>
+      ${[0,1,2].map(i=>{ const L=order&&order.lines[i]; return html`<div key=${'lb'+i} className="anchor" ref=${el=>{ labelRefs.current[i]=el; }} style=${{visibility:'hidden'}}>${screen==='play'&&L&&html`<div className="tlabel" style=${{'--c':L.color}}>${L.label}</div>`}</div>`; })}
+      <div className="anchor" ref=${judgeRef}>${judge&&screen==='play'&&html`<${JudgePop} key=${judge.id} j=${judge}/>`}</div>
+    </div>
+
+    ${screen==='play'&&html`<div className="hud-top">
+      <div className="hud-row">
+        <div className="day-pill">${day}日目</div>
+        <div className=${'clock'+(hud.left<=15?' late':'')+(hud.left<=0?' over':'')} role="timer" aria-label="閉店までの時間"><i style=${{width:(hud.time*100).toFixed(1)+'%'}}></i><span>${hud.left>0?`閉店まで ${Math.floor(hud.left/60)}:${String(hud.left%60).padStart(2,'0')}`:'ラストオーダー'}</span></div>
+        <button className="icon-btn" onClick=${pause} aria-label="一時停止">${PauseIcon}</button>
+      </div>
+      <div className="hud-row">
+        <div className="sales"><small>売上</small><b>${yen(hud.sales)}</b><div className=${'goalbar'+(hud.sales>=goal?' done':'')}><i style=${{width:Math.min(100,hud.sales/goal*100)+'%'}}></i></div><small>目標 ${yen(goal)}</small></div>
+        ${order&&html`<${OrderCard} o=${order} patience=${hud.patience} tip=${hud.tip}/>`}
+      </div>
+      ${order&&order.kind==='mix'&&html`<${MixMeter} key=${order.id} o=${order} share=${hud.share} tol=${G().game?G().game.tolFor(order):0.03}/>`}
+    </div>
+    ${(()=>{
+      const iceBtn=iceOn&&html`<button className=${'icebtn'+(hud.needIce?' hint':'')} disabled=${!hud.canIce} onClick=${()=>{ G().sfx.init(); G().game.addIce(); }} aria-label="氷を入れる"><${IceIcon}/>氷 ${hud.ice}${order&&order.ice?`/${order.ice}`:''}</button>`;
+      const serveBtn=html`<button className=${'serve'+(hud.canServe&&!hud.next&&!hud.needIce?' ready':'')} disabled=${!hud.canServe} onClick=${()=>G().game.serve()}>どうぞ！</button>`;
+      const pb=f=>html`<${PourBtn} key=${f} fruit=${f} active=${held===f} hint=${hud.next===f&&!hud.needIce} onDown=${down(f)} onUp=${up(f)}/>`;
+      return multi
+        ?html`<div className="hud-bottom multi"><div className="action-row">${iceBtn}${serveBtn}</div><div className="pour-row">${counter.map(pb)}</div></div>`
+        :html`<div className="hud-bottom">${pb('peach')}<div className="center-col">${iceBtn}${serveBtn}</div>${pb('pear')}</div>`;
+    })()}`}
+
+    ${banner&&html`<div className="banner" key=${banner.id}><span style=${banner.small?{fontSize:'18px'}:null}>${banner.text}</span></div>`}
+    ${legend&&html`<div className="legend" key=${legend.id}><div className="flash"></div><div className="rays"></div><div className="box"><div className="word">LEGENDARY!</div><span className="sub">${legend.name}</span></div></div>`}
+
+    ${screen==='title'&&html`<div className="title">
+      <div className="marquee">
+        <div className="eyebrow">果実喫茶</div>
+        <h1>しゅわっと</h1>
+        <div className="ribbon">Sparkling Café</div>
+        <p className="sub">白桃と洋梨のソーダを、<br/>注文の線ぴったりに注いでおもてなし</p>
+      </div>
+      <div className="corner"><button className="icon-btn" onClick=${()=>open('settings')} aria-label="設定">${GearIcon}</button></div>
+      <div className="title-bottom">
+        <div className="title-meta">
+          <div className="day-pick">
+            <button onClick=${()=>setDay(d=>Math.max(1,d-1))} disabled=${day<=1} aria-label="前の日">‹</button>
+            <span>${day}日目</span>
+            <button onClick=${()=>setDay(d=>Math.min(save.unlocked,d+1))} disabled=${day>=save.unlocked} aria-label="次の日">›</button>
+          </div>
+          <div className="wallet">資金<b>${yen(save.wallet)}</b></div>
+        </div>
+        <button className="cta" onClick=${()=>goIntro(day)}>開店する</button>
+        <div className="grid2">
+          <button className="ghost" onClick=${()=>open('shop')}>お店</button>
+          ${!HOME_APP&&html`<button className="ghost" onClick=${()=>open('rank')}>ランキング</button>`}
+          <button className="ghost" onClick=${()=>open('book')}>図鑑</button>
+          <button className="ghost" style=${HOME_APP?{gridColumn:'1 / -1'}:null} onClick=${()=>open('howto')}>あそびかた</button>
+        </div>
+        <p className="best">${bestDay?`これまでの最高：${bestDay}日目 ${yen(save.best[bestDay])}`:'まずは1日目、開店してみよう'}</p>
+      </div>
+    </div>`}
+
+    ${screen==='intro'&&html`<div className="sheet"><div className="card">
+      <div className="intro-day"><b>${day}</b>日目</div>
+      <h2>${dayInfo(day).title}</h2>
+      <ul>${dayInfo(day).lines.map((l,i)=>html`<li key=${i}>${l}</li>`)}</ul>
+      <div className="rules">
+        <span>${['白桃','洋梨',...EXTRA_FRUITS.filter(f=>save.owned[f]).map(f=>FRUIT[f].name)].join('・')}</span>
+        ${save.opts.ice&&html`<span>氷入りあり</span>`}${save.opts.mix&&html`<span>ミックスあり</span>`}
+      </div>
+      <div className="goal">今日の売上目標<b>${yen(goal)}</b></div>
+      <button className="cta" onClick=${begin}>はじめる</button>
+      <button className="link" onClick=${toTitle}>タイトルにもどる</button>
+    </div></div>`}
+
+    ${screen==='result'&&result&&html`<div className="sheet"><div className="receipt">
+      <div className="r-head"><span>お会計伝票</span><span>${result.day}日目</span></div>
+      <div className="r-shop">果実喫茶 しゅわっと</div>
+      <dl>
+        <div><dt>提供した杯数</dt><dd>${result.served}杯</dd></div>
+        <div><dt>ぴったり</dt><dd>${result.perfect}杯</dd></div>
+        <div><dt>最大コンボ</dt><dd>${result.maxCombo}</dd></div>
+        <div><dt>うちチップ</dt><dd>${yen(result.tips)}</dd></div>
+        ${result.legends>0&&html`<div><dt>LEGENDARY</dt><dd>${result.legends}回</dd></div>`}
+      </dl>
+      <div className="r-total"><span>本日の売上</span><b>${yen(result.sales)}</b></div>
+      <div className="r-goal">目標 ${yen(result.goal)}</div>
+      <div className="r-foot">
+        <div className="stars" aria-label=${`星${result.stars}つ`}>${[1,2,3].map(i=>html`<span key=${i} className=${i<=result.stars?'on':''}>★</span>`)}</div>
+        <div className=${'stamp '+(result.passed?'ok':'ng')}>${result.passed?html`<span>目標<br/>達成</span>`:html`<span>あと<br/>${yen(result.goal-result.sales)}</span>`}</div>
+      </div>
+      <div className="r-note">お店の資金に ${yen(result.sales)} 入りました（いま ${yen(save.wallet)}）${result.newBest?html`<br/><b>自己ベスト更新！</b>`:''}${rankNote?html`<br/>${rankNote}`:''}</div>
+      <div className="r-actions">
+        ${result.passed?html`<button className="cta" onClick=${()=>goIntro(result.day+1)}>${result.day+1}日目へ</button>`:html`<button className="cta" onClick=${()=>goIntro(result.day)}>もう一度</button>`}
+        <div className="row2">${result.passed&&html`<button className="ghost" onClick=${()=>goIntro(result.day)}>もう一度</button>`}<button className="ghost" onClick=${()=>open('shop')}>お店</button>${!HOME_APP&&html`<button className="ghost" onClick=${()=>open('rank')}>ランキング</button>`}</div>
+        <button className="link" onClick=${toTitle}>タイトルへ</button>
+      </div>
+    </div></div>`}
+
+    ${modal==='pause'&&html`<div className="sheet"><div className="card">
+      <h2>ひと休み中</h2>
+      <p style=${{fontSize:'14px',margin:'0 0 16px'}}>${day}日目・売上 ${yen(hud.sales)}</p>
+      <button className="cta" onClick=${resume}>再開する</button>
+      <div className="row2" style=${{marginTop:'10px'}}><button className="ghost" onClick=${()=>setModal('settings')}>設定</button><button className="ghost" onClick=${toTitle}>タイトルへ</button></div>
+    </div></div>`}
+    ${modal==='settings'&&Settings()}
+    ${modal==='shop'&&html`<${Shop} save=${save} onBuy=${buy} onClose=${()=>setModal(null)}/>`}
+    ${modal==='rank'&&html`<${Ranking} save=${save} cloud=${cloud} onNick=${setNick} onClose=${()=>setModal(null)}/>`}
+
+    ${modal==='howto'&&html`<div className="sheet" onClick=${e=>{ if(e.target===e.currentTarget) setModal(null); }}><div className="card">
+      <h2>あそびかた</h2>
+      <ol>
+        <li>注文カードとグラスの<b>線の色</b>を見る。線の色が注ぐ果汁の色。</li>
+        <li>下の<b>果汁ボタンを長押し</b>すると、ボトルが傾いて注げる。白桃は左、洋梨は右。新メニューを買うとボタンが増える（位置はいつも同じ）。</li>
+        <li>指をはなしても少し流れるので、<b>線の少し手前</b>で止めるのがコツ。</li>
+        <li>勢いよく注ぐと<b>泡</b>が立つ。あふれる前に少し待つと泡が落ち着く。</li>
+        <li><b>氷×2</b>の注文は「氷」ボタンで入れる。氷で水位が上がるので、先に入れると安心。</li>
+        <li><b>ミックス</b>は上のメーターの針を目標の枠に入れつつ、線まで注ぐ。</li>
+        <li>線まで注げたら<b>「どうぞ！」</b>。売上はお店の資金になり、改装や新メニューに使える。</li>
+      </ol>
+      <p style=${{fontSize:'12px',color:'var(--ink-soft)',margin:'0 0 14px'}}>パソコンでは ← / A で左はし、→ / D で右はし、1〜5 で左から何番目かのボトル、I で氷、スペースで「どうぞ！」</p>
+      <button className="cta" onClick=${()=>setModal(null)}>わかった</button>
+    </div></div>`}
+
+    ${modal==='book'&&html`<div className="sheet" onClick=${e=>{ if(e.target===e.currentTarget) setModal(null); }}><div className="card wide">
+      <h2>図鑑</h2>
+      <h3>常連さん <small>${SPECIES_KEYS.filter(k=>save.species[k]).length} / ${SPECIES_KEYS.length}</small></h3>
+      <div className="grid3">${SPECIES_KEYS.map(k=>{ const seen=!!save.species[k]; return html`<div key=${k} className=${'tile'+(seen?'':' lock')}><${Face} k=${k} locked=${!seen}/>${seen?SPECIES[k].short:'？？？'}<span className="d">${seen?SPECIES[k].like:'まだ来ていない'}</span></div>`; })}</div>
+      <h3>グラス <small>${GLASS_KEYS.filter(k=>save.glasses[k]).length} / ${GLASS_KEYS.length}</small></h3>
+      <div className="grid3">${GLASS_KEYS.map(k=>{ const seen=!!save.glasses[k]; return html`<div key=${k} className=${'tile'+(seen?'':' lock')}><${GlassIcon} k=${k} locked=${!seen}/>${seen?GLASSES[k].name:'？？？'}<span className="d">${seen?GLASSES[k].desc:`${GLASSES[k].day}日目に登場`}</span></div>`; })}</div>
+      <h3>メニュー <small>${ALL_FRUITS.filter(f=>BASE_FRUITS.includes(f)||save.owned[f]).length} / ${ALL_FRUITS.length}</small></h3>
+      <div className="grid3">${ALL_FRUITS.map(f=>{ const has=BASE_FRUITS.includes(f)||save.owned[f]; return html`<div key=${f} className=${'tile'+(has?'':' lock')}><${FruitIcon} f=${f}/>${has?FRUIT[f].name+'ソーダ':'？？？'}<span className="d">${has?(FRUIT[f].desc?'お店で追加':'最初からあるよ'):'お店で買える'}</span></div>`; })}</div>
+      <div className="legendline">LEGENDARY 達成：${save.legend||0}回</div>
+      <button className="cta" style=${{marginTop:'14px'}} onClick=${()=>setModal(null)}>とじる</button>
+    </div></div>`}
+  </div>`;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
+</script>
+</body></html>
