@@ -473,18 +473,20 @@ class Sfx{
     try{
       const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
       const c=this.ctx=new AC();
-      this.master=c.createGain(); this.master.gain.value=this.muted?0:0.55; this.master.connect(c.destination);
+      this.out=c.createGain(); this.out.gain.value=0.55; this.out.connect(c.destination);
+      // 効果音は master、BGM は bgmGain を通して out へ。効果音オフで BGM まで止めないよう分けている
+      this.master=c.createGain(); this.master.gain.value=this.muted?0:1; this.master.connect(this.out);
       const len=c.sampleRate*2, buf=c.createBuffer(1,len,c.sampleRate), d=buf.getChannelData(0);
       for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
       const mk=(type,f,q)=>{ const s=c.createBufferSource(); s.buffer=buf; s.loop=true; const fl=c.createBiquadFilter(); fl.type=type; fl.frequency.value=f; fl.Q.value=q; const g=c.createGain(); g.gain.value=0; s.connect(fl); fl.connect(g); g.connect(this.master); s.start(); return {g,fl}; };
       this.fizz=mk('highpass',3200,0.5);
       this.pour=mk('bandpass',700,1.4);
       const lfo=c.createOscillator(); lfo.frequency.value=9; const lg=c.createGain(); lg.gain.value=260; lfo.connect(lg); lg.connect(this.pour.fl.frequency); lfo.start();
-      this.bgmGain=c.createGain(); this.bgmGain.gain.value=0; this.bgmGain.connect(this.master);
+      this.bgmGain=c.createGain(); this.bgmGain.gain.value=0; this.bgmGain.connect(this.out);
       this.syncBgm();
     }catch(e){ this.ctx=null; }
   }
-  setMuted(m){ this.muted=m; if(this.master) this.master.gain.value=m?0:0.55; }
+  setMuted(m){ this.muted=m; if(this.master) this.master.gain.value=m?0:1; }
   setLevels(flow,fizz){ if(!this.ctx) return; const t=this.ctx.currentTime; this.pour.g.gain.setTargetAtTime(flow*0.32,t,0.04); this.fizz.g.gain.setTargetAtTime(fizz*0.05,t,0.15); }
   tone(f,d,{type='sine',vol=0.15,at=0,slide=null,attack=0.006,dest=null,when=null}={}){
     const c=this.ctx; if(!c) return; const t=when??(c.currentTime+at); const o=c.createOscillator(), g=c.createGain();
